@@ -37,6 +37,15 @@ body::-webkit-scrollbar {
     max-height: 90vh;
     height: auto;
 }
+.empty-column {
+	margin-top: 10px;
+    background-color: #C9D2D9;
+    margin: 20px 10px 0 10px;
+    padding: 10px;
+    min-width: 20%;
+    max-width: 20%;
+    border-radius: 5px;
+}
 
 
 /* Карточки внутри колонок */

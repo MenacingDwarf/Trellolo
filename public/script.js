@@ -1,7 +1,7 @@
 // Добавление колонок и карточек
 
 var add_card = function(elem) {
-	var textarea = elem.parentNode.parentNode.children[1].lastChild;
+	var textarea = elem.parentNode.parentNode.children[1].querySelectorAll('textarea.card')[0];
 	var card = document.createElement('div');
 	card.className = "card";
 	card.innerHTML = textarea.value;
@@ -21,6 +21,7 @@ var start_adding_card = function(elem) {
 	var input = document.createElement('textarea');
 	input.className = "card";
 	input.setAttribute("placeholder","Введите название карточки");
+  input.onkeydown = pressEnter;
 	elem.parentNode.children[1].appendChild(input).focus();
 
 	elem.parentNode.replaceChild(make_buttons("Добавить карточку", "add_card(this)", "stop_adding_card(this)"),elem);
@@ -65,6 +66,7 @@ var start_adding_column = function(elem) {
 	var input = document.createElement('textarea');
 	input.className = "card";
 	input.setAttribute("placeholder","Введите название колонки");
+  input.onkeydown = pressEnter;
 	elem.parentNode.insertBefore(input,elem).focus();
 
 	elem.parentNode.replaceChild(make_buttons("Добавить колонку", "add_column(this)", "stop_adding_column(this)"),elem);
@@ -102,6 +104,12 @@ var make_buttons = function(text,add_function,close_function) {
   return buttons;
 }
 
+function pressEnter(e) {
+  if (e.keyCode == 13) {
+    e.target.parentNode.parentNode.querySelectorAll('.add-card-button')[0].click();
+  } 
+}
+
 // Изменение названия колонки и карточки
 var oldTitle = undefined;
 var oldCard = undefined;
@@ -112,6 +120,7 @@ var startChangingTitle = function(elem) {
     var input = document.createElement('textarea');
     input.className = "card";
     input.value = elem.innerHTML;
+    input.onkeydown = pressEnter;
     oldTitle = elem.innerHTML;
 
     elem.parentNode.replaceChild(make_buttons("Изменить колонку", "changeTitle(this)", "stopChangingTitle(this)"),
@@ -127,6 +136,7 @@ var startChangingCard = function(elem) {
     var input = document.createElement('textarea');
     input.className = "card";
     input.value = elem.innerHTML;
+    input.onkeydown = pressEnter;
     oldCard = elem.innerHTML;
     
     elem.parentNode.parentNode.replaceChild(make_buttons("Изменить карточку", "changeCard(this)", "stopChangingCard(this)"),
@@ -203,14 +213,22 @@ var DragManager = new function() {
 
     if (e.which != 1) return;
 
-    var elem = e.target.closest('div.card');
+    var cardElem = e.target.closest('div.card');
+    var columnElem = e.target.closest('div.column-title');
+    var elem;
 
-    if (!elem) return;
+    if (cardElem) {
+      elem = cardElem;
+    }
+    else if (columnElem) {
+      elem = columnElem.parentNode;
+    }
+    else return;
 
     dragObject.elem = elem;
-    dragObject.elem.style.width = getComputedStyle(elem).width;
-    dragObject.elem.style.height = getComputedStyle(elem).height;
 
+    dragObject.elem.style.width = getComputedStyle(elem).width;
+    dragObject.height = getComputedStyle(elem).height;
     // запомним, что элемент нажат на текущих координатах pageX/pageY
     dragObject.downX = e.pageX;
     dragObject.downY = e.pageY;
@@ -304,12 +322,27 @@ var DragManager = new function() {
   function changeDroppable(dropElem) {
   	var empty = document.createElement('div');
     empty.className = "empty-card";
-    empty.style.height = dragObject.avatar.style.height;
-
-  	if (dropElem.card) {
+    empty.style.height = dragObject.height;
+    if (dragObject.avatar.className == 'column') {
+      empty.className = "empty-column";
+      if (dropElem.column) {
+        if (dragObject.empty) {
+          dragObject.empty.parentNode.removeChild(dragObject.empty);
+          dragObject.empty = undefined;
+        }
+        
+        dragObject.droppable = dropElem.column;
+        dragObject.empty = dropElem.column.parentNode.insertBefore(empty,dragObject.droppable);
+      }
+      else if (!dropElem.empty_column && dragObject.empty) {
+        dragObject.empty.parentNode.removeChild(dragObject.empty);
+        dragObject.empty = undefined;
+      }
+    }
+    else if (dropElem.card) {
   		if (dragObject.empty) {
-  			dragObject.empty.parentNode.removeChild(dragObject.empty);
-			dragObject.empty = undefined;
+  		  dragObject.empty.parentNode.removeChild(dragObject.empty);
+			  dragObject.empty = undefined;
   		}
   		
   		dragObject.droppable = dropElem.card;
@@ -332,8 +365,8 @@ var DragManager = new function() {
 	    else if (dragObject.empty) {
 		    dragObject.empty.parentNode.removeChild(dragObject.empty);
 		    dragObject.empty = undefined;
-		}
-		dragObject.droppable = undefined;
+		  }
+		  dragObject.droppable = undefined;
   	} 
 	
   }
@@ -362,7 +395,7 @@ var DragManager = new function() {
       return null;
     }
 
-    return {column: elem.closest('.column'), card: elem.closest('.card'), cards: elem.closest('.cards')};
+    return {empty_column: elem.closest('.empty-column'), column: elem.closest('.column'), card: elem.closest('.card'), cards: elem.closest('.cards')};
   }
 
   document.onmousemove = onMouseMove;
