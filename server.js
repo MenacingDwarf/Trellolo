@@ -33,6 +33,11 @@ server.get('/kanban',function(req,res){
 	else res.redirect('/');
 });
 
+server.get('/kanbans',function(req,res){
+	if (req.session.user_id) res.render('kanbans');
+	else res.redirect('/');
+});
+
 server.post('/save', urlencodedParser, function (req, res) {
 	console.log("some changes!")
 });
@@ -52,7 +57,7 @@ server.post('/login/', urlencodedParser, function (req, res) {
 				else {
 					req.session.user_id = res1.rows[0].user_id;
 					req.session.save();
-					res.redirect('/kanban')
+					res.redirect('/kanbans')
 				}
 			});
 		}
@@ -72,7 +77,7 @@ server.post('/register/', urlencodedParser, function (req, res) {
 					await pool.query("SELECT user_id from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res2) => {
 						req.session.user_id = res2.rows[0].user_id;
 						req.session.save();
-						res.redirect('/kanban');
+						res.redirect('/kanbans');
 					});
 					
 				}

@@ -17,12 +17,7 @@ body::-webkit-scrollbar {
 .head {
 	width: 100%;
 	background-color: #0972AC;
-	height: 10vh;
-}
-@media screen and (max-width: 1500px){
-	.head {
-		height: 5vh;
-	}
+	height: 5vh;
 }
 .head > img {
 	margin-left: 20px;
@@ -40,6 +35,92 @@ body::-webkit-scrollbar {
 .logout > a {
 	text-decoration: none;
 	color: white;
+}
+
+form {
+	text-align: center;
+	background-color: #DEE2E5;
+	border-radius: 5px;
+	padding: 10px;
+	width: 25%;
+	margin: auto;
+	margin-top: 10vh;
+}
+
+form > h3 {
+	margin-top: 0;
+	margin-bottom: 10px;
+}
+input {
+	margin-bottom: 10px;
+	border-radius: 5px;
+	padding: 5px;
+	font-family: inherit;
+	font-size: inherit;
+}
+input.login {
+	color: white;
+	border: 0px;
+	background-color: #0067A3;
+}
+input.login:hover {
+	cursor: pointer;
+}
+input.register {
+	color: white;
+	border: 0px;
+	background-color: #40A35B;
+}
+input.register:hover {
+	cursor: pointer;
+}
+.head-center {
+	display: flex;
+	height: 5vh;
+	align-items: center;
+	background-color: #0972AC;
+}
+.head-center > img {
+	margin: auto;
+	height: 100%;
+}
+
+.kanbans {
+	width: 70%;
+	height: 95vh;
+	margin: auto;
+	padding: 20px;
+	background-color: white;
+}
+
+.kanban {
+	width: 20%;
+	height: 15%;
+	padding: 10px;
+	text-decoration: none;
+	border-radius: 5px;
+	word-break: break-all;
+	background-color: #E7E9ED;
+	margin-right: 10px;
+	margin-bottom: 10px;
+	float: left;
+}
+.kanban:hover {
+	cursor: pointer;
+	box-shadow:0 0 0 128px rgba(0, 0, 0, 0.05) inset;
+}
+
+.add-kanban {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #6B778C;
+}
+
+.exist-kanban {
+	background-color: #0972AC;
+	color: white;
+	font-weight: bold;
 }
 
 /* Колонки */
@@ -65,6 +146,16 @@ body::-webkit-scrollbar {
 	.column {
 		min-width: 40%;
 		max-width: 40%;
+	}
+	form {
+		width: 35%;
+	}
+	body {
+		font-size: 25px;
+	}
+	.kanban {
+		width: 40%;
+		height: 10%;
 	}
 }
 .empty-column {
