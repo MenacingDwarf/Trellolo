@@ -35,7 +35,7 @@ var add_card = function(elem) {
 // Функция прикрепляется к крестику
 var stop_adding_card = function(elem) {
 	cards = elem.parentNode.parentNode.children[1];
-	cards.removeChild(cards.lastChild);
+	cards.removeChild(cards.querySelectorAll('textarea.card')[0]);
 	replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
 }
 
@@ -79,6 +79,7 @@ var add_column = function(elem) {
 	new_column.appendChild(add);
 	column.parentNode.insertBefore(new_column,column);
 
+  sendChanges();
 	stop_adding_column(elem);
 }
 
@@ -221,6 +222,15 @@ var make_buttons = function(text,add_function,close_function) {
   buttons.appendChild(close);
 
   return buttons;
+}
+
+function sendChanges() {
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("POST", '/save', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.send();
 }
 
 // Обработка нажатия клавиши ентер при вводе текста в текстовое поле

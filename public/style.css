@@ -10,18 +10,37 @@ body {
     background-image: url(bg.jpg);
     background-size: cover;
     margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 body::-webkit-scrollbar {
   display: none;
+}
+.head {
+	width: 100%;
+	background-color: #0972AC;
+	height: 10vh;
+}
+.head > img {
+	margin-left: 20px;
+	float: left;
+	height: 100%;
+}
+
+.head > .logout {
+	display: flex;
+	height: 100%;
+	align-items: center;
+	float: right;
+	margin-right: 20px;
+}
+.logout > a {
+	text-decoration: none;
+	color: white;
 }
 
 /* Колонки */
 .columns {
     width: 100%;
-    height: 100vh;
+    height: 90vh;
     display: flex;
     overflow-x: auto;
     align-items: flex-start;
@@ -34,7 +53,7 @@ body::-webkit-scrollbar {
     min-width: 20%;
     max-width: 20%;
     border-radius: 5px;
-    max-height: 90vh;
+    max-height: 80vh;
     height: auto;
 }
 .empty-column {
@@ -52,7 +71,7 @@ body::-webkit-scrollbar {
 .cards {
 	width: 100%;
 	overflow-y: auto;
-	max-height: 80vh;
+	max-height: 70vh;
 	margin-bottom: 10px;
 }
 
