@@ -19,7 +19,7 @@ body::-webkit-scrollbar {
 	background-color: #0972AC;
 	height: 5vh;
 }
-.head > img {
+.head > a > img {
 	margin-left: 20px;
 	float: left;
 	height: 100%;
