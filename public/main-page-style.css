@@ -10,10 +10,11 @@ form {
 	background-color: #DEE2E5;
 	border-radius: 5px;
 	padding: 10px;
-	width: 30%;
+	width: 25%;
 	margin: auto;
 	margin-top: 10vh;
 }
+
 form > h3 {
 	margin-top: 0;
 	margin-bottom: 10px;
@@ -43,10 +44,20 @@ input.register:hover {
 }
 .head {
 	display: flex;
+	height: 10vh;
 	align-items: center;
 	background-color: #0972AC;
 }
 .head > img {
 	margin: auto;
-	width: 15%;
+	height: 100%;
+}
+
+@media screen and (max-width: 1200px){
+	.head {
+		height: 5vh;
+	}
+	form {
+		width: 35%;
+	}
 }
