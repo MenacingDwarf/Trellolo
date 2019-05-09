@@ -25,7 +25,8 @@ server.use(cookieParser());
 server.set('view engine', 'ejs');
 
 server.get('/',function(req,res){
-	res.render('start-page');
+	if (req.session.user_id) res.redirect('/kanbans');
+	else res.render('start-page');
 });
 
 server.get('/kanban',function(req,res){
