@@ -34,7 +34,9 @@ var DragManager = new function() {
 
     // сохраним ширину и высоту объекта
     dragObject.elem.style.width = getComputedStyle(elem).width;
+    dragObject.background = getComputedStyle(elem).background;
     dragObject.height = getComputedStyle(elem).height;
+
     // запомним, что элемент нажат на текущих координатах pageX/pageY
     dragObject.downX = e.pageX;
     dragObject.downY = e.pageY;
@@ -101,7 +103,8 @@ var DragManager = new function() {
       left: avatar.left || '',
       top: avatar.top || '',
       zIndex: avatar.zIndex || '',
-      transform : "rotate(0deg)"
+      transform : "rotate(0deg)",
+      background: avatar.style.background,
     };
     avatar.style.transform = "rotate(5deg)";
 
@@ -113,6 +116,7 @@ var DragManager = new function() {
       avatar.style.top = old.top;
       avatar.style.zIndex = old.zIndex;
       avatar.style.transform = old.transform;
+      avatar.style.background =  old.background;
     };
 
     return avatar;
@@ -147,7 +151,8 @@ var DragManager = new function() {
     return {empty_column: elem.closest('.empty-column'), 
             column: elem.closest('.column'), 
             card: elem.closest('.card'), 
-            cards: elem.closest('.cards')};
+            cards: elem.closest('.cards'),
+            trashhold: elem.closest('.trashhold')};
   }
 
   // окончание переноса
@@ -175,42 +180,50 @@ var DragManager = new function() {
     }
 
     // если идёт перемещение колонки
-    if (dragObject.avatar.className == 'column') {
-      empty.className = "empty-column";
-      if (dropElem.column) { // очищаем пустой элемент если мышь наведена на колонку
-        if (dragObject.empty) clearEmpty();
-        
-        // запоминаем наведённую колонку и добавляем пустой элемент
-        dragObject.droppable = dropElem.column;
-        dragObject.empty = dropElem.column.parentNode.insertBefore(empty,dragObject.droppable);
-      }
-      //очищаем пустой элемент если мышь наведена не на пустой элемент
-      else if (!dropElem.empty_column && dragObject.empty) clearEmpty();
+    if (dropElem.trashhold) {
+      dropElem.trashhold.style.background = 'rgba(255,0,0,0.6)';
+      dragObject.avatar.style.background = 'rgba(255,0,0,0.6)';
+      console.log('trash');
     }
-    else if (dropElem.card) { // если идёт перемещение карточки и мышь наведена на карточку
-  		if (dragObject.empty) clearEmpty();
-  		
-  		dragObject.droppable = dropElem.card;
-    	dragObject.empty = dropElem.card.parentNode.insertBefore(empty,dragObject.droppable);
-  	}
-  	else if (!dropElem.cards) {
-  		if (dropElem.column) {  // если идёт перемещение карточки и мышь наведена на колонку, но не список карточек
-        // если мышь наведена на колонку, не являющуюся не созданной и либо на странице нет пустого элемента 
-        // либо он есть и либо у нас сохранён элемент подходящий для вставки 
-        // либо наведённая колонка не равна колонке, содержащей пустой элемент
-	    	if (dropElem.column.children[1] && 
-	    		 (!dragObject.empty ||           //     
-	    		 dragObject.empty &&             // 
-	    		 (dragObject.droppable || dragObject.empty.parentNode.parentNode != dropElem.column))) {
+    else {
+      dragObject.avatar.style.background = dragObject.background;
+      if (dragObject.avatar.className == 'column') {
+        empty.className = "empty-column";
+        if (dropElem.column) { // очищаем пустой элемент если мышь наведена на колонку
+          if (dragObject.empty) clearEmpty();
+          
+          // запоминаем наведённую колонку и добавляем пустой элемент
+          dragObject.droppable = dropElem.column;
+          dragObject.empty = dropElem.column.parentNode.insertBefore(empty,dragObject.droppable);
+        }
+        //очищаем пустой элемент если мышь наведена не на пустой элемент
+        else if (!dropElem.empty_column && dragObject.empty) clearEmpty();
+      }
+      else if (dropElem.card) { // если идёт перемещение карточки и мышь наведена на карточку
+    		if (dragObject.empty) clearEmpty();
+    		
+    		dragObject.droppable = dropElem.card;
+      	dragObject.empty = dropElem.card.parentNode.insertBefore(empty,dragObject.droppable);
+    	}
+    	else if (!dropElem.cards) {
+    		if (dropElem.column) {  // если идёт перемещение карточки и мышь наведена на колонку, но не список карточек
+          // если мышь наведена на колонку, не являющуюся не созданной и либо на странице нет пустого элемента 
+          // либо он есть и либо у нас сохранён элемент подходящий для вставки 
+          // либо наведённая колонка не равна колонке, содержащей пустой элемент
+  	    	if (dropElem.column.children[1] && 
+  	    		 (!dragObject.empty ||           //     
+  	    		 dragObject.empty &&             // 
+  	    		 (dragObject.droppable || dragObject.empty.parentNode.parentNode != dropElem.column))) {
 
-	    		if (dragObject.empty) clearEmpty();
-	    		dropElem.column.children[1].appendChild(empty);
-	    		dragObject.empty = dropElem.column.children[1].lastChild;
-	    	}
-	    }
-	    else if (dragObject.empty) clearEmpty();
-		  dragObject.droppable = undefined;
-  	} 
+  	    		if (dragObject.empty) clearEmpty();
+  	    		dropElem.column.children[1].appendChild(empty);
+  	    		dragObject.empty = dropElem.column.children[1].lastChild;
+  	    	}
+  	    }
+  	    else if (dragObject.empty) clearEmpty();
+  		  dragObject.droppable = undefined;
+    	} 
+    }
 	
   }
 

@@ -87,7 +87,8 @@ input.register:hover {
 
 .kanbans {
 	width: 70%;
-	height: 95vh;
+	min-height: 95vh;
+	overflow: auto;
 	margin: auto;
 	padding: 20px;
 	background-color: white;
@@ -95,7 +96,7 @@ input.register:hover {
 
 .kanban {
 	width: 20%;
-	height: 15%;
+	height: 15vh;
 	padding: 10px;
 	text-decoration: none;
 	border-radius: 5px;
@@ -126,10 +127,28 @@ input.register:hover {
 /* Колонки */
 .columns {
     width: 100%;
-    height: 90vh;
+    height: 95vh;
     display: flex;
     overflow-x: auto;
     align-items: flex-start;
+}
+.columns::-webkit-scrollbar {
+    height: 1vh;
+    z-index: 9999;
+}
+.columns::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+}
+.columns::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: rgba(220,220,220,0.8); 
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}
+.columns::-webkit-scrollbar-thumb:window-inactive {
+	background: rgba(220,220,220,0.4); 
 }
 .column {
 	margin-top: 10px;
@@ -139,7 +158,7 @@ input.register:hover {
     min-width: 20%;
     max-width: 20%;
     border-radius: 5px;
-    max-height: 80vh;
+    max-height: 85vh;
     height: auto;
 }
 @media screen and (max-width: 1200px){
@@ -155,7 +174,7 @@ input.register:hover {
 	}
 	.kanban {
 		width: 40%;
-		height: 10%;
+		height: 10vh;
 	}
 }
 .empty-column {
@@ -166,6 +185,21 @@ input.register:hover {
     min-width: 20%;
     max-width: 20%;
     border-radius: 5px;
+}
+.trashhold {
+	z-index: 1;
+	flex: 0 0 auto;
+	height: 5vh;
+	margin-top: -5vh;
+	display: flex;
+	opacity: 0.4;
+	align-items: center;
+	justify-content: center;
+	background-color: grey;
+}
+.trashhold > img {
+	height: 90%;
+	margin: auto;
 }
 
 
@@ -242,6 +276,7 @@ textarea.card::placeholder {
 }
 .column-title {
 	font-weight: bold;
+	min-height: 1em;
 	margin-bottom: 20px;
 	word-break: break-all;
 }
