@@ -35,12 +35,13 @@ server.get('/kanban',function(req,res){
 });
 
 server.get('/kanbans',function(req,res){
-	if (req.session.user_id) res.render('kanbans');
+	if (req.session.user_id) {
+		pool.query("SELECT kanban_id,title FROM kanban WHERE owner = $1", [req.session.user_id],(err,res1) => {
+			console.log()
+			res.render('kanbans',{kanbans: JSON.stringify(res1.rows)});
+		})
+	}
 	else res.redirect('/');
-});
-
-server.post('/save', urlencodedParser, function (req, res) {
-	console.log("some changes!")
 });
 
 server.post('/login/', urlencodedParser, function (req, res) {
@@ -93,6 +94,16 @@ server.get('/logout', function (req, res) {
 	req.session.user_id = undefined;
 	req.session.save();
 	res.redirect('/');
+});
+
+server.post('/save', urlencodedParser, function (req, res) {
+	console.log("some changes!")
+});
+
+server.post('/add_kanban', urlencodedParser, function (req, res) {
+	pool.query("INSERT INTO kanban VALUES(DEFAULT,$1,$2) RETURNING kanban_id",[req.body.title, req.session.user_id], (err, res1) => {
+		res.send(res1.rows[0].kanban_id.toString());
+	})
 });
 
 server.listen(process.env.PORT,

@@ -245,7 +245,6 @@ var DragManager = new function() {
   	    		 (dragObject.droppable || dragObject.empty.parentNode.parentNode != dropElem.column))) {
 
   	    		if (dragObject.empty) clearEmpty();
-            console.log('hello');
   	    		dragObject.empty = dropElem.column.children[1].appendChild(empty);
   	    	}
   	    }
