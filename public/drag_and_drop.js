@@ -33,7 +33,6 @@ var DragManager = new function() {
     dragObject.elem = elem;
 
     // сохраним ширину и высоту объекта
-    dragObject.elem.style.width = getComputedStyle(elem).width;
     dragObject.background = getComputedStyle(elem).background;
     dragObject.height = getComputedStyle(elem).height;
 
@@ -105,7 +104,9 @@ var DragManager = new function() {
       zIndex: avatar.zIndex || '',
       transform : "rotate(0deg)",
       background: avatar.style.background,
+      width: '100%'
     };
+    avatar.style.width = getComputedStyle(dragObject.elem).width;
     avatar.style.transform = "rotate(5deg)";
 
     // функция для отмены переноса
@@ -117,6 +118,7 @@ var DragManager = new function() {
       avatar.style.zIndex = old.zIndex;
       avatar.style.transform = old.transform;
       avatar.style.background =  old.background;
+      avatar.style.width = old.width;
     };
 
     return avatar;
@@ -168,8 +170,13 @@ var DragManager = new function() {
         dragObject.avatar.rollback();
       }
       else {
-        dragObject.elem.hidden = true;
         dragObject.droppable.style.background = dragObject.trashholdBackground;
+        if (confirm("Удалить элемент?")) {
+          dragObject.elem.hidden = true;
+        }
+        else {
+          dragObject.avatar.rollback();
+        }
       }
     }
     else dragObject.avatar.rollback();
@@ -199,9 +206,9 @@ var DragManager = new function() {
       if (dragObject.empty) clearEmpty();
     }
     else {
-      dragObject.avatar.style.background = dragObject.background;
       if (dragObject.droppable) {
         if (dragObject.droppable.className == "trashhold") {
+          dragObject.avatar.style.background = dragObject.background;
           dragObject.droppable.style.background = dragObject.trashholdBackground;
           dragObject.droppable = undefined;
         }
@@ -238,8 +245,8 @@ var DragManager = new function() {
   	    		 (dragObject.droppable || dragObject.empty.parentNode.parentNode != dropElem.column))) {
 
   	    		if (dragObject.empty) clearEmpty();
-  	    		dropElem.column.children[1].appendChild(empty);
-  	    		dragObject.empty = dropElem.column.children[1].lastChild;
+            console.log('hello');
+  	    		dragObject.empty = dropElem.column.children[1].appendChild(empty);
   	    	}
   	    }
   	    else if (dragObject.empty) clearEmpty();
@@ -263,4 +270,9 @@ function getCoords(elem) { // кроме IE8-
     top: box.top + pageYOffset,
     left: box.left + pageXOffset
   };
+}
+
+function percentwidth(elem){
+    var pa = elem.parentNode || elem;
+    return ((elem.offsetWidth/pa.offsetWidth)*100).toFixed(2)+'%';
 }
