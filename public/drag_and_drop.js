@@ -161,7 +161,7 @@ var DragManager = new function() {
   function finishDrag(e) {
     if (dragObject.empty) {
       dragObject.empty.parentNode.replaceChild(dragObject.elem, dragObject.empty);
-      // createAvatar();
+      createAvatar();
     }
     if (dragObject.droppable) {
       if (dragObject.droppable.className != "trashhold") {
