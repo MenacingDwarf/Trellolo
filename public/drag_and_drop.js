@@ -161,9 +161,18 @@ var DragManager = new function() {
   function finishDrag(e) {
     if (dragObject.empty) {
       dragObject.empty.parentNode.replaceChild(dragObject.elem, dragObject.empty);
-      createAvatar();
+      // createAvatar();
     }
-    dragObject.avatar.rollback();
+    if (dragObject.droppable) {
+      if (dragObject.droppable.className != "trashhold") {
+        dragObject.avatar.rollback();
+      }
+      else {
+        dragObject.elem.hidden = true;
+        dragObject.droppable.style.background = dragObject.trashholdBackground;
+      }
+    }
+    else dragObject.avatar.rollback();
   }
 
   // взаимодействие с некоторыми объектами
@@ -181,12 +190,22 @@ var DragManager = new function() {
 
     // если идёт перемещение колонки
     if (dropElem.trashhold) {
+      if (!dragObject.droppable) {
+        dragObject.droppable = dropElem.trashhold;
+        dragObject.trashholdBackground = getComputedStyle(dropElem.trashhold).background;
+      }
       dropElem.trashhold.style.background = 'rgba(255,0,0,0.6)';
       dragObject.avatar.style.background = 'rgba(255,0,0,0.6)';
-      console.log('trash');
+      if (dragObject.empty) clearEmpty();
     }
     else {
       dragObject.avatar.style.background = dragObject.background;
+      if (dragObject.droppable) {
+        if (dragObject.droppable.className == "trashhold") {
+          dragObject.droppable.style.background = dragObject.trashholdBackground;
+          dragObject.droppable = undefined;
+        }
+      }
       if (dragObject.avatar.className == 'column') {
         empty.className = "empty-column";
         if (dropElem.column) { // очищаем пустой элемент если мышь наведена на колонку
@@ -197,7 +216,10 @@ var DragManager = new function() {
           dragObject.empty = dropElem.column.parentNode.insertBefore(empty,dragObject.droppable);
         }
         //очищаем пустой элемент если мышь наведена не на пустой элемент
-        else if (!dropElem.empty_column && dragObject.empty) clearEmpty();
+        else if (!dropElem.empty_column && dragObject.empty) { 
+          clearEmpty();
+          dragObject.droppable = undefined;
+        }
       }
       else if (dropElem.card) { // если идёт перемещение карточки и мышь наведена на карточку
     		if (dragObject.empty) clearEmpty();
