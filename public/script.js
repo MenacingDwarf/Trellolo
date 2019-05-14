@@ -1,3 +1,45 @@
+function insertColumn(id,title_text,next=undefined) {
+  var title = document.createElement('div');
+  title.className = "column-title";
+  title.innerHTML = title_text;
+  title.setAttribute("ondblclick","startChangingTitle(this)");
+
+  var add = document.createElement('div');
+  add.className = "add-card";
+  add.setAttribute("onclick", "start_adding_card(this)");
+  add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
+
+  var cards = document.createElement('div');
+  cards.className = "cards";
+
+  var new_column = document.createElement('div');
+  new_column.className = "column";
+  new_column.setAttribute("data-id", id);
+  new_column.appendChild(title);
+  new_column.appendChild(cards);
+  new_column.appendChild(add);
+  if (next) {
+    return next.parentNode.insertBefore(new_column,next);
+  }
+  else {
+    var columns = document.querySelectorAll('.columns')[0];
+    return columns.insertBefore(new_column,columns.children[columns.children.length - 1]);
+  }
+}
+
+function insertCard(id,text,column,next=undefined) {
+  var card = document.createElement('div');
+  card.className = "card";
+  card.innerHTML = text;
+  card.setAttribute("ondblclick", "startChangingCard(this)");
+  card.setAttribute("data-id", id);
+  
+  if (next) {
+    column.children[1].insertBefore(card,next);
+  }
+  else column.children[1].appendChild(card);
+}
+
 // Добавление новой карточки или колонки
 // Во всех функциях входной параметр elem - кнопка, к которой прикреплена эта функция
 
@@ -239,3 +281,17 @@ function pressEnter(e) {
     e.target.parentNode.parentNode.querySelectorAll('.add-card-button')[0].click();
   } 
 }
+
+function fillColumns() {
+  var info = JSON.parse(document.getElementById("info").innerHTML);
+  info.columns.sort((a,b) => (a.place > b.place) ? 1 : -1);
+  info.columns.forEach((item) => {
+    var column = insertColumn(item.column_id,item.title);
+    item.cards.sort((a,b) => (a.place > b.place) ? 1 : -1);
+    item.cards.forEach((card) => {
+      insertCard(card.card_id,card.text,column);
+    })
+  });
+}
+
+fillColumns();

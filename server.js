@@ -32,16 +32,19 @@ server.get('/',function(req,res){
 server.get('/kanban', function(req,res){
 	var getInfo = async() => {
 		var args = {};
-		var columns = await pool.query("SELECT * FROM kanbas_column,kanban " + 
-				   				   "WHERE kanban.kanban_id = $1 " +
-				   				   "AND kanban.kanban_id = kanbas_column.kanban_id",[req.query.id]);
+		var columns = await pool.query("SELECT column_id,title,place FROM kanbas_column " + 
+				   				   	   "WHERE kanbas_column.kanban_id = $1 ",[req.query.id]);
 		args.columns = columns.rows;
-		console.log(args.columns);
+		for (var i = 0; i<columns.rows.length; i++) {
+			var cards = await pool.query("SELECT card_id,text,place FROM card " + 
+				   				   		 "WHERE card.column_id = $1 ", [columns.rows[i].column_id]);
+			columns.rows[i].cards = cards.rows;
+		}
+		res.render('page', {data: JSON.stringify(args)});
 	}
-	getInfo();
+
 	if (req.session.user_id) {
-		console.log(req.params);
-		res.render('page');
+		getInfo();
 	}
 	else res.redirect('/');
 });
