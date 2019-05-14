@@ -29,15 +29,26 @@ server.get('/',function(req,res){
 	else res.render('start-page');
 });
 
-server.get('/kanban',function(req,res){
-	if (req.session.user_id) res.render('page');
+server.get('/kanban', function(req,res){
+	var getInfo = async() => {
+		var args = {};
+		var columns = await pool.query("SELECT * FROM kanbas_column,kanban " + 
+				   				   "WHERE kanban.kanban_id = $1 " +
+				   				   "AND kanban.kanban_id = kanbas_column.kanban_id",[req.query.id]);
+		args.columns = columns.rows;
+		console.log(args.columns);
+	}
+	getInfo();
+	if (req.session.user_id) {
+		console.log(req.params);
+		res.render('page');
+	}
 	else res.redirect('/');
 });
 
 server.get('/kanbans',function(req,res){
 	if (req.session.user_id) {
 		pool.query("SELECT kanban_id,title FROM kanban WHERE owner = $1", [req.session.user_id],(err,res1) => {
-			console.log()
 			res.render('kanbans',{kanbans: JSON.stringify(res1.rows)});
 		})
 	}

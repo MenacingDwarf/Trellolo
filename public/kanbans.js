@@ -73,7 +73,7 @@ function sendChanges(kanban) {
 function createKanban(id,title,next) {
 	var kanban = document.createElement('a');
 	kanban.className = "kanban exist-kanban";
-	kanban.setAttribute('href','/kanban');
+	kanban.setAttribute('href','/kanban?id='+id);
 	kanban.id = id;
 	kanban.innerHTML = title;
 	kanban = next.parentNode.insertBefore(kanban,next);

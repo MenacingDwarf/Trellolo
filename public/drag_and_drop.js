@@ -16,6 +16,7 @@ var DragManager = new function() {
   var dragObject = {};
 
   function onMouseDown(e) {
+    
     // ничего не делаем при нажатии правой кнопки мыши
     if (e.which != 1) return;
 
@@ -83,6 +84,7 @@ var DragManager = new function() {
   }
 
   function onMouseUp(e) {
+
     if (dragObject.avatar) { // если перенос идет
       finishDrag(e);
     }
@@ -259,7 +261,9 @@ var DragManager = new function() {
   document.onmousemove = onMouseMove;
   document.onmouseup = onMouseUp;
   document.onmousedown = onMouseDown;
-  	
+  //document.addEventListener('touchmove', onMouseMove, false);
+  document.addEventListener('touchend', onMouseUp, false);
+  //document.addEventListener('touchstart', onMouseDown, false);
 };
 
 function getCoords(elem) { // кроме IE8-
