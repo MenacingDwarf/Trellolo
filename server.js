@@ -31,7 +31,7 @@ server.get('/',function(req,res){
 
 server.get('/kanban', function(req,res){
 	var getInfo = async() => {
-		var args = {};
+		var args = {kanban_id: req.query.id};
 		var columns = await pool.query("SELECT column_id,title,place FROM kanbas_column " + 
 				   				   	   "WHERE kanbas_column.kanban_id = $1 ",[req.query.id]);
 		args.columns = columns.rows;
@@ -110,8 +110,24 @@ server.get('/logout', function (req, res) {
 	res.redirect('/');
 });
 
-server.post('/save', urlencodedParser, function (req, res) {
-	console.log("some changes!")
+server.post('/add_column', urlencodedParser, function (req, res) {
+	if (req.body.kanban && req.body.title && req.body.place) {
+		pool.query("INSERT INTO kanbas_column VALUES(DEFAULT,$1,$2,$3) RETURNING column_id",
+				   [req.body.kanban,req.body.title,req.body.place], (err,res1) => {
+			res.send(res1.rows[0].column_id.toString())
+		});
+	}
+	
+});
+
+server.post('/add_card', urlencodedParser, function (req, res) {
+	if (req.body.column && req.body.text && req.body.place) {
+		pool.query("INSERT INTO card VALUES(DEFAULT,$1,$2,$3) RETURNING card_id",
+				   [req.body.column,req.body.text,req.body.place], (err,res1) => {
+			res.send(res1.rows[0].card_id.toString())
+		});
+	}
+	
 });
 
 server.post('/add_kanban', urlencodedParser, function (req, res) {

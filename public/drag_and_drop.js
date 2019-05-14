@@ -19,6 +19,7 @@ var DragManager = new function() {
     
     // ничего не делаем при нажатии правой кнопки мыши
     if (e.which != 1) return;
+    if (document.querySelectorAll('textarea').length != 0) return;
 
     // определяем что именно мы перемещаем: карточку или колонку 
     var cardElem = e.target.closest('div.card');

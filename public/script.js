@@ -40,6 +40,45 @@ function insertCard(id,text,column,next=undefined) {
   else column.children[1].appendChild(card);
 }
 
+function sendNewColumn(column) {
+  var place = column.parentNode.children.length-2;
+  var title = column.children[0].innerHTML;
+  var xhr = new XMLHttpRequest();
+
+  var body = 'kanban='+ kanban_id + '&title=' + encodeURIComponent(title) + '&place=' + place;
+
+  xhr.open("POST", '/add_column', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.onreadystatechange = function() {
+    if (this.readyState != 4) return;
+
+    column.setAttribute('data-id', this.responseText);
+    console.log(column.getAttribute('data-id'))
+  }
+
+  xhr.send(body); 
+}
+
+function sendNewCard(card) {
+  var place = card.parentNode.children.length-1;
+  var text = card.innerHTML;
+  var column = card.parentNode.parentNode;
+  var xhr = new XMLHttpRequest();
+  var body = 'column='+ column.getAttribute('data-id') + '&text=' + encodeURIComponent(text) + '&place=' + place;
+
+  xhr.open("POST", '/add_card', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.onreadystatechange = function() {
+    if (this.readyState != 4) return;
+
+    card.setAttribute('data-id', this.responseText);
+  }
+
+  xhr.send(body); 
+}
+
 // Добавление новой карточки или колонки
 // Во всех функциях входной параметр elem - кнопка, к которой прикреплена эта функция
 
@@ -63,13 +102,16 @@ var start_adding_card = function(elem) {
 // Функция прикрепляется к кнопке "Добавить карточку"
 var add_card = function(elem) {
 	var textarea = elem.parentNode.parentNode.children[1].querySelectorAll('textarea.card')[0];
+  var cards = textarea.parentNode;
+
 	var card = document.createElement('div');
 	card.className = "card";
 	card.innerHTML = textarea.value;
   card.setAttribute("ondblclick", "startChangingCard(this)");
 	
 	replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-	textarea.parentNode.replaceChild(card,textarea);
+	cards.replaceChild(card,textarea);
+  sendNewCard(cards.children[cards.children.length - 1]);
 }
 
 // Отмена добавления
@@ -119,8 +161,9 @@ var add_column = function(elem) {
 	new_column.appendChild(title);
 	new_column.appendChild(cards);
 	new_column.appendChild(add);
-	column.parentNode.insertBefore(new_column,column);
+	new_column = column.parentNode.insertBefore(new_column,column);
 
+  sendNewColumn(new_column);
   sendChanges();
 	stop_adding_column(elem);
 }
@@ -292,6 +335,7 @@ function fillColumns() {
       insertCard(card.card_id,card.text,column);
     })
   });
+  return info.kanban_id;
 }
 
-fillColumns();
+var kanban_id = fillColumns();
