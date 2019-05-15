@@ -17,7 +17,7 @@ body::-webkit-scrollbar {
 .head {
 	width: 100%;
 	background-color: #0972AC;
-	height: 2em;
+	height: 5vh;
 	color: white;
 }
 .head > a > img {
@@ -31,7 +31,7 @@ body::-webkit-scrollbar {
 	align-items: center;
 	margin-left: 20px;
 	float:left;
-	font-size: 1.5em;
+	font-size: 1.4em;
 	font-weight: bold;
 	font-style: italic;
 }
