@@ -31,12 +31,12 @@ server.get('/',function(req,res){
 
 server.get('/kanban', function(req,res){
 	var getInfo = async() => {
-		var kanban = await pool.query("SELECT owner FROM kanban WHERE kanban.kanban_id = $1 ",[req.query.id]);
+		var kanban = await pool.query("SELECT title,owner FROM kanban WHERE kanban.kanban_id = $1 ",[req.query.id]);
 		if (kanban.rows.length == 0) {
 			res.redirect('/kanbans');
 		}
 		else if (kanban.rows[0].owner == req.session.user_id) {
-			var args = {kanban_id: req.query.id};
+			var args = {kanban: {id: req.query.id, title: kanban.rows[0].title}};
 			var columns = await pool.query("SELECT column_id,title,place FROM kanbas_column " + 
 					   				   	   "WHERE kanbas_column.kanban_id = $1 ",[req.query.id]);
 			args.columns = columns.rows;

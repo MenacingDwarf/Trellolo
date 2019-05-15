@@ -17,24 +17,30 @@ function startAddingKanban(elem) {
   	close.setAttribute("onclick", 'stopAddingKanban(this)');
   	var cross = document.createElement('div');
   	cross.className = "cross";
-
   	close.appendChild(cross);
+
+  	var buttons = document.createElement('div');
+  	buttons.appendChild(add);
+  	buttons.appendChild(close);
+
   	kanban.appendChild(input);
-  	kanban.appendChild(add);
-  	kanban.appendChild(close);
+  	kanban.appendChild(buttons);
 
   	kanbans.replaceChild(kanban,elem);
   	kanbans.querySelectorAll('textarea')[0].focus();
 }
 
 var addKanban = async(elem) => {
-	var kanban = createKanban(0,elem.parentNode.querySelectorAll('textarea')[0].value,elem.parentNode);
-	sendChanges(kanban);
-	replaceKanban(elem.parentNode);
+	var text = elem.parentNode.parentNode.querySelectorAll('textarea')[0].value;
+	if (text) {
+		var kanban = createKanban(0,elem.parentNode.parentNode.querySelectorAll('textarea')[0].value,elem.parentNode.parentNode);
+		sendChanges(kanban);
+		replaceKanban(elem.parentNode.parentNode);
+	}
 }
 
 function stopAddingKanban(elem) {
-	replaceKanban(elem.parentNode);
+	replaceKanban(elem.parentNode.parentNode);
 }
 
 function replaceKanban(elem) {
@@ -87,6 +93,12 @@ function createKanbans() {
 	kanbans.forEach((item, i, arr) => {
 		createKanban(item.kanban_id,item.title,last);
 	})
+}
+
+function pressEnter(e) {
+  if (e.keyCode == 13) {
+    e.target.parentNode.querySelectorAll('.add-card-button')[0].click();
+  } 
 }
 
 createKanbans();
