@@ -86,33 +86,35 @@ server.post('/login/', urlencodedParser, function (req, res) {
 					});
 				}
 			});
-		}
-		else res.redirect('/');
+		} else res.redirect('/');
 	} else res.redirect('/');
 });
 
 server.post('/register/', urlencodedParser, function (req, res) {
 	const bcrypt = require('bcrypt');
-	pool.query("SELECT user_name from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res1) => {
-		if (res1.rows.length != 0) {
-			res.redirect('/');
-		}
-		else {
-			bcrypt.hash(req.body.password,Math.floor(Math.random() * 10),(err,hash)=>{
-				var regUser = async()=> {
-					await pool.query('INSERT INTO \"user\" VALUES(DEFAULT,$1,$2)',[req.body.user_name,hash]);
-					await pool.query("SELECT user_id from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res2) => {
-						req.session.user_id = res2.rows[0].user_id;
-						req.session.save();
-						res.redirect('/kanbans');
-					});
-					
+	if (req.body.user_name && req.body.password) {
+		if (req.body.user_name.length >= 6 && req.body.password.length >= 6) {
+			pool.query("SELECT user_name from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res1) => {
+				if (res1.rows.length != 0) {
+					res.redirect('/');
 				}
-				regUser();
+				else {
+					bcrypt.hash(req.body.password,Math.floor(Math.random() * 10),(err,hash)=>{
+						var regUser = async()=> {
+							await pool.query('INSERT INTO \"user\" VALUES(DEFAULT,$1,$2)',[req.body.user_name,hash]);
+							await pool.query("SELECT user_id from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res2) => {
+								req.session.user_id = res2.rows[0].user_id;
+								req.session.save();
+								res.redirect('/kanbans');
+							});
+							
+						}
+						regUser();
+					})
+				}
 			})
-			
-		}
-	})
+		} else res.redirect('/');
+	} else res.redirect('/');
 });
 
 server.get('/logout', function (req, res) {

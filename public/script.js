@@ -362,6 +362,13 @@ function pressEnter(e) {
   } 
 }
 
+function show(state){
+  document.getElementById('window').style.display = state;      
+  document.getElementById('wrap').style.display = state;      
+}
+
+
+
 function fillColumns() {
   data.columns.sort((a,b) => (a.place > b.place) ? 1 : -1);
   data.columns.forEach((item) => {

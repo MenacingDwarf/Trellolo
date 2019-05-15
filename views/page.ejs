@@ -6,8 +6,25 @@
 	<script>var data = JSON.parse('<%- data %>');var kanban_id = data.kanban_id;</script>
 </head>
 <body>
-	<header class="head"><a href="/kanbans"><img src="logo.png"></a><div class="logout"><a href="/logout">Выйти</a></div></header>
+
+	<header class="head"><a href="/kanbans"><img src="logo.png"></a>
+		<div class="logout"><span class="help" onclick="show('block')">Помощь</span><a href="/logout">Выйти</a></div>
+	</header>
 	<section class="columns">
+		<div onclick="show('none')" id="wrap"></div>
+		<div id="window">
+			<div class="krest" onclick="show('none')"><div class="cross"></div></div>
+			<center>
+				Trellolo предоставляет вам множество возможностей:
+			</center>
+			<ul>
+				<li>Добавление карточек и колонок происходит посредством нажатия на соответствующие кнопки</li>
+				<li>Двойным нажатием по карточке или названию колонки вы можете изменить соответствующий текст</li>
+				<li>Зажав левую кнопку мыши, вы можете перемещать карточки и колонки</li>
+				<li>Переместив карточку или колонку на панель удаления внизу, вы можете убрать соответствующий элемент с доски</li>
+			<ul>
+			
+		</div>
   		<div class="column">
   			<div class="add-card" onclick="start_adding_column(this)"><div class="plus"></div>Добавить ещё одну колонку</div>
   		</div>

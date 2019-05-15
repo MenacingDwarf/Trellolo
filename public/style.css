@@ -36,6 +36,13 @@ body::-webkit-scrollbar {
 	text-decoration: none;
 	color: white;
 }
+.help {
+	color: white;
+	margin-right: 10px;
+}
+.help:hover {
+	cursor: pointer;
+}
 
 form {
 	text-align: center;
@@ -161,23 +168,6 @@ input.register:hover {
     border-radius: 5px;
     max-height: 85vh;
     height: auto;
-}
-@media screen and (max-width: 1200px){
-	.column {
-		width: 40%;
-		min-width: 40%;
-		max-width: 40%;
-	}
-	form {
-		width: 35%;
-	}
-	body {
-		font-size: 25px;
-	}
-	.kanban {
-		width: 40%;
-		height: 10vh;
-	}
 }
 .empty-column {
 	margin-top: 10px;
@@ -358,4 +348,60 @@ textarea.card::placeholder {
 	border-radius: 5px;
 	left: -9px; 
 	top: 9px;
+}
+
+#wrap{
+	display: none;
+	opacity: 0.8;
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	padding: 16px;
+	background-color: rgba(1, 1, 1, 0.725);
+	z-index: 100;
+	overflow: auto;
+}
+	
+#window{
+	width: 40%;
+	height: max-content;
+	margin: 50px auto;
+	display: none;
+	background: #fff;
+	z-index: 200;
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 20px;
+	bottom: 0;
+	padding: 20px;
+}
+	
+.krest{
+	float: right;
+	cursor: pointer;
+	margin-top: -9px;
+}
+
+@media screen and (max-width: 1200px){
+	.column {
+		width: 40%;
+		min-width: 40%;
+		max-width: 40%;
+	}
+	form {
+		width: 35%;
+	}
+	body {
+		font-size: 25px;
+	}
+	.kanban {
+		width: 40%;
+		height: 10vh;
+	}
+	#window {
+		width: 70%;
+	}
 }
