@@ -129,16 +129,18 @@ var start_adding_card = function(elem) {
 // Функция прикрепляется к кнопке "Добавить карточку"
 var add_card = function(elem) {
 	var textarea = elem.parentNode.parentNode.children[1].querySelectorAll('textarea.card')[0];
-  var cards = textarea.parentNode;
+  if (textarea.value) {
+    var cards = textarea.parentNode;
 
-	var card = document.createElement('div');
-	card.className = "card";
-	card.innerHTML = textarea.value;
-  card.setAttribute("ondblclick", "startChangingCard(this)");
-	
-	replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-	cards.replaceChild(card,textarea);
-  sendNewCard(cards.children[cards.children.length - 1]);
+  	var card = document.createElement('div');
+  	card.className = "card";
+  	card.innerHTML = textarea.value;
+    card.setAttribute("ondblclick", "startChangingCard(this)");
+  	
+  	replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
+  	cards.replaceChild(card,textarea);
+    sendNewCard(cards.children[cards.children.length - 1]);
+  }
 }
 
 // Отмена добавления
@@ -169,29 +171,30 @@ var start_adding_column = function(elem) {
 var add_column = function(elem) {
 	var column = elem.parentNode.parentNode;
 	var textarea = column.children[0];
+  if (textarea.value) {
+  	var title = document.createElement('div');
+  	title.className = "column-title";
+  	title.innerHTML = textarea.value;
+    title.setAttribute("ondblclick","startChangingTitle(this)");
 
-	var title = document.createElement('div');
-	title.className = "column-title";
-	title.innerHTML = textarea.value;
-  title.setAttribute("ondblclick","startChangingTitle(this)");
+  	var add = document.createElement('div');
+  	add.className = "add-card";
+  	add.setAttribute("onclick", "start_adding_card(this)");
+  	add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
 
-	var add = document.createElement('div');
-	add.className = "add-card";
-	add.setAttribute("onclick", "start_adding_card(this)");
-	add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
+  	var cards = document.createElement('div');
+  	cards.className = "cards";
 
-	var cards = document.createElement('div');
-	cards.className = "cards";
+  	var new_column = document.createElement('div');
+  	new_column.className = "column";
+  	new_column.appendChild(title);
+  	new_column.appendChild(cards);
+  	new_column.appendChild(add);
+  	new_column = column.parentNode.insertBefore(new_column,column);
 
-	var new_column = document.createElement('div');
-	new_column.className = "column";
-	new_column.appendChild(title);
-	new_column.appendChild(cards);
-	new_column.appendChild(add);
-	new_column = column.parentNode.insertBefore(new_column,column);
-
-  sendNewColumn(new_column);
-	stop_adding_column(elem);
+    sendNewColumn(new_column);
+  	stop_adding_column(elem);
+  }
 }
 
 var stop_adding_column = function(elem) {
@@ -231,15 +234,17 @@ var startChangingCard = function(elem) {
 var changeCard = function(elem) {
   var column = elem.parentNode.parentNode;
   var textarea = column.children[1].querySelectorAll('textarea.card')[0];
-  var card = document.createElement('div');
-  card.className = "card";
-  card.innerHTML = textarea.value;
-  card.setAttribute('data-id',textarea.getAttribute('data-id'));
-  card.setAttribute("ondblclick", "startChangingCard(this)");
-  
-  replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-  textarea.parentNode.replaceChild(card,textarea);
-  sendChangeCard(card);
+  if (textarea.value) {
+    var card = document.createElement('div');
+    card.className = "card";
+    card.innerHTML = textarea.value;
+    card.setAttribute('data-id',textarea.getAttribute('data-id'));
+    card.setAttribute("ondblclick", "startChangingCard(this)");
+    
+    replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
+    textarea.parentNode.replaceChild(card,textarea);
+    sendChangeCard(card);
+  }
 }
 
 // Отмена изменения
@@ -280,15 +285,16 @@ var startChangingTitle = function(elem) {
 var changeTitle = function(elem) {
   var column = elem.parentNode.parentNode;
   var input = column.children[0];
+  if (input.value) {
+    var title = document.createElement('div');
+    title.className = "column-title";
+    title.innerHTML = input.value;
+    title.setAttribute("ondblclick","startChangingTitle(this)");
 
-  var title = document.createElement('div');
-  title.className = "column-title";
-  title.innerHTML = input.value;
-  title.setAttribute("ondblclick","startChangingTitle(this)");
-
-  replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-  column.replaceChild(title,input);
-  sendChangeColumn(column);
+    replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
+    column.replaceChild(title,input);
+    sendChangeColumn(column);
+  }
 }
 
 // Отмена изменения
