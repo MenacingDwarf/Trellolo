@@ -283,11 +283,7 @@ function getCoords(elem) { // кроме IE8-
   };
 }
 
-function percentwidth(elem){
-    var pa = elem.parentNode || elem;
-    return ((elem.offsetWidth/pa.offsetWidth)*100).toFixed(2)+'%';
-}
-
+// Запросы к серверу об изменениях на доске
 function sendChangeColumn(column) {
   var place = findObject(column);
   var title = column.children[0].innerHTML;

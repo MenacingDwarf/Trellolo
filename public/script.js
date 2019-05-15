@@ -1,44 +1,4 @@
-function insertColumn(id,title_text,next=undefined) {
-  var title = document.createElement('div');
-  title.className = "column-title";
-  title.innerHTML = title_text;
-  title.setAttribute("ondblclick","startChangingTitle(this)");
-
-  var add = document.createElement('div');
-  add.className = "add-card";
-  add.setAttribute("onclick", "start_adding_card(this)");
-  add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
-
-  var cards = document.createElement('div');
-  cards.className = "cards";
-
-  var new_column = document.createElement('div');
-  new_column.className = "column";
-  new_column.setAttribute("data-id", id);
-  new_column.appendChild(title);
-  new_column.appendChild(cards);
-  new_column.appendChild(add);
-  if (next) {
-    return next.parentNode.insertBefore(new_column,next);
-  }
-  else {
-    var columns = document.querySelectorAll('.columns')[0];
-    return columns.insertBefore(new_column,columns.children[columns.children.length - 1]);
-  }
-}
-
-function insertCard(id,text,column,next=undefined) {
-  var card = document.createElement('div');
-  card.className = "card";
-  card.innerHTML = text;
-  card.setAttribute("ondblclick", "startChangingCard(this)");
-  card.setAttribute("data-id", id);
-  if (next) {
-    column.children[1].insertBefore(card,next);
-  }
-  else column.children[1].appendChild(card);
-}
-
+// Запросы на сервер с различными данными
 function sendNewColumn(column) {
   var place = column.parentNode.children.length-2;
   var title = column.children[0].innerHTML;
@@ -104,7 +64,50 @@ function sendChangeCard(card) {
   xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-  xhr.send(body); }
+  xhr.send(body); 
+}
+
+// Вставка колонки или карточки
+function insertColumn(id,title_text,next=undefined) {
+  var title = document.createElement('div');
+  title.className = "column-title";
+  title.innerHTML = title_text;
+  title.setAttribute("ondblclick","startChangingTitle(this)");
+
+  var add = document.createElement('div');
+  add.className = "add-card";
+  add.setAttribute("onclick", "start_adding_card(this)");
+  add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
+
+  var cards = document.createElement('div');
+  cards.className = "cards";
+
+  var new_column = document.createElement('div');
+  new_column.className = "column";
+  new_column.setAttribute("data-id", id);
+  new_column.appendChild(title);
+  new_column.appendChild(cards);
+  new_column.appendChild(add);
+  if (next) {
+    return next.parentNode.insertBefore(new_column,next);
+  }
+  else {
+    var columns = document.querySelectorAll('.columns')[0];
+    return columns.insertBefore(new_column,columns.children[columns.children.length - 1]);
+  }
+}
+
+function insertCard(id,text,column,next=undefined) {
+  var card = document.createElement('div');
+  card.className = "card";
+  card.innerHTML = text;
+  card.setAttribute("ondblclick", "startChangingCard(this)");
+  card.setAttribute("data-id", id);
+  if (next) {
+    column.children[1].insertBefore(card,next);
+  }
+  else column.children[1].appendChild(card);
+}
 
 // Добавление новой карточки или колонки
 // Во всех функциях входной параметр elem - кнопка, к которой прикреплена эта функция
@@ -347,6 +350,7 @@ var make_buttons = function(text,add_function,close_function) {
   return buttons;
 }
 
+// Функция ищет объект среди детей его родителя и возвращает его порядковый номер
 function findObject(obj) {
   var parent = obj.parentNode;
   for (var i = 0; i<parent.children.length; i++) {
@@ -362,14 +366,14 @@ function pressEnter(e) {
   } 
 }
 
+// Отображение окна помощи или же его скрытие
 function show(state){
   document.getElementById('window').style.display = state;      
   document.getElementById('wrap').style.display = state;      
 }
 
-
-
-function fillColumns() {
+// Заполнение доски колонками и карточками, полученными с сервера
+function fillKanban() {
   data.columns.sort((a,b) => (a.place > b.place) ? 1 : -1);
   data.columns.forEach((item) => {
     var column = insertColumn(item.column_id,item.title);
@@ -380,4 +384,4 @@ function fillColumns() {
   });
 }
 
-fillColumns();
+fillKanban();

@@ -1,3 +1,4 @@
+/* Стили для всей страницы */
 html,
 body {
     width: 100%;
@@ -14,6 +15,8 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
+
+/* Стили для шапки сайта */
 .head {
 	width: 100%;
 	background-color: #0972AC;
@@ -53,7 +56,19 @@ body::-webkit-scrollbar {
 .help:hover {
 	cursor: pointer;
 }
+/* Стили для шапки сайта с картинкой по центру*/
+.head-center {
+	display: flex;
+	height: 5vh;
+	align-items: center;
+	background-color: #0972AC;
+}
+.head-center > img {
+	margin: auto;
+	height: 100%;
+}
 
+/* Стили для формы регистрации и авторизации */
 form {
 	text-align: center;
 	background-color: #DEE2E5;
@@ -91,26 +106,16 @@ input.register {
 input.register:hover {
 	cursor: pointer;
 }
-.head-center {
-	display: flex;
-	height: 5vh;
-	align-items: center;
-	background-color: #0972AC;
-}
-.head-center > img {
-	margin: auto;
-	height: 100%;
-}
 
+/* Стили окна с досками */
 .kanbans {
 	width: 70%;
 	min-height: 95vh;
 	overflow: auto;
 	margin: auto;
-	padding: 20px;
+	padding: 40px;
 	background-color: white;
 }
-
 .kanban {
 	width: 26%;
 	height: 10em;
@@ -136,7 +141,6 @@ input.register:hover {
 	justify-content: center;
 	color: #6B778C;
 }
-
 .exist-kanban {
 	background-color: #0972AC;
 	color: white;
@@ -190,6 +194,7 @@ input.register:hover {
     max-width: 20%;
     border-radius: 5px;
 }
+/* Поле для удаления карточек */
 .trashhold {
 	z-index: 1;
 	flex: 0 0 auto;
@@ -232,19 +237,6 @@ input.register:hover {
 }
 .cards::-webkit-scrollbar-thumb:window-inactive {
 	background: rgba(220,220,220,0.4); 
-}
-.change-text {
-	border: 0px;
-	font-family: inherit;
-	font-size: inherit;
-	min-height: 1em;
-	border-radius: 5px;
-	width: 93%;
-	margin-bottom: 20px;
-	padding: 10px;
-}
-.change-text::placeholder {
-	color: #C1C2C4;
 }
 
 /* Стили для самих карточек и кнопок добавления */ 
@@ -361,6 +353,7 @@ textarea.card::placeholder {
 	top: 9px;
 }
 
+/* Стили для всплывающего окна с помощью */
 #wrap{
 	display: none;
 	opacity: 0.8;
@@ -389,13 +382,13 @@ textarea.card::placeholder {
 	bottom: 0;
 	padding: 20px;
 }
-	
 .krest{
 	float: right;
 	cursor: pointer;
 	margin-top: -9px;
 }
 
+/* При маленькой ширине экрана некоторые стили стоит подредактировать */
 @media screen and (max-width: 1200px){
 	.column {
 		width: 40%;

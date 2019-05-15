@@ -4,15 +4,15 @@ const session = require('express-session');
 var path = require('path');
 var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser');
-const { Pool } = require('pg')
 
+// Подключение базы данных PostreSQL
+const { Pool } = require('pg')
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: true,
 })
 
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
-
 server = express();
 server.use(express.static(path.join(__dirname, 'public')));
 server.use(session({
@@ -24,47 +24,14 @@ server.use(session({
 server.use(cookieParser());
 server.set('view engine', 'ejs');
 
+// Если пользователь авторизирован загружаем страницу с его досками
+// Иначе страницу с окном авторизации
 server.get('/',function(req,res){
 	if (req.session.user_id) res.redirect('/kanbans');
 	else res.render('start-page');
 });
 
-server.get('/kanban', function(req,res){
-	var getInfo = async() => {
-		var kanban = await pool.query("SELECT title,owner FROM kanban WHERE kanban.kanban_id = $1 ",[req.query.id]);
-		if (kanban.rows.length == 0) {
-			res.redirect('/kanbans');
-		}
-		else if (kanban.rows[0].owner == req.session.user_id) {
-			var args = {kanban: {id: req.query.id, title: kanban.rows[0].title}};
-			var columns = await pool.query("SELECT column_id,title,place FROM kanbas_column " + 
-					   				   	   "WHERE kanbas_column.kanban_id = $1 ",[req.query.id]);
-			args.columns = columns.rows;
-			for (var i = 0; i<columns.rows.length; i++) {
-				var cards = await pool.query("SELECT card_id,text,place FROM card " + 
-					   				   		 "WHERE card.column_id = $1 ", [columns.rows[i].column_id]);
-				columns.rows[i].cards = cards.rows;
-			}
-			res.render('page', {data: JSON.stringify(args)});
-		}
-		else res.redirect('/kanbans');
-	}
-
-	if (req.session.user_id) {
-		getInfo();
-	}
-	else res.redirect('/');
-});
-
-server.get('/kanbans',function(req,res){
-	if (req.session.user_id) {
-		pool.query("SELECT kanban_id,title FROM kanban WHERE owner = $1", [req.session.user_id],(err,res1) => {
-			res.render('kanbans',{kanbans: JSON.stringify(res1.rows)});
-		})
-	}
-	else res.redirect('/');
-});
-
+// Авторизация с серверной валидацией
 server.post('/login/', urlencodedParser, function (req, res) {
 	const bcrypt = require('bcrypt');
 	if (req.body.user_name && req.body.password) {
@@ -90,6 +57,7 @@ server.post('/login/', urlencodedParser, function (req, res) {
 	} else res.redirect('/');
 });
 
+// Регистрация с серверной валидацией и хэшированием пароля
 server.post('/register/', urlencodedParser, function (req, res) {
 	const bcrypt = require('bcrypt');
 	if (req.body.user_name && req.body.password) {
@@ -123,6 +91,56 @@ server.get('/logout', function (req, res) {
 	res.redirect('/');
 });
 
+// Если пользователь авторизирован загружаем страницу с досками
+// Иначе отправляем его на страницу с формой авторизации
+server.get('/kanbans',function(req,res){
+	if (req.session.user_id) {
+		pool.query("SELECT kanban_id,title FROM kanban WHERE owner = $1", [req.session.user_id],(err,res1) => {
+			res.render('kanbans',{kanbans: JSON.stringify(res1.rows)});
+		})
+	}
+	else res.redirect('/');
+});
+
+
+// Добавление новой доски в базу данных
+server.post('/add_kanban', urlencodedParser, function (req, res) {
+	pool.query("INSERT INTO kanban VALUES(DEFAULT,$1,$2) RETURNING kanban_id",[req.body.title, req.session.user_id], (err, res1) => {
+		res.send(res1.rows[0].kanban_id.toString());
+	})
+});
+
+// Загрузка доски со всей необходимой информацией
+server.get('/kanban', function(req,res){
+	var getInfo = async() => {
+		var kanban = await pool.query("SELECT title,owner FROM kanban WHERE kanban.kanban_id = $1 ",[req.query.id]);
+		if (kanban.rows.length == 0) {
+			res.redirect('/kanbans');
+		}
+		else if (kanban.rows[0].owner == req.session.user_id) {
+			var args = {kanban: {id: req.query.id, title: kanban.rows[0].title}};
+			var columns = await pool.query("SELECT column_id,title,place FROM kanbas_column " + 
+					   				   	   "WHERE kanbas_column.kanban_id = $1 ",[req.query.id]);
+			args.columns = columns.rows;
+			for (var i = 0; i<columns.rows.length; i++) {
+				var cards = await pool.query("SELECT card_id,text,place FROM card " + 
+					   				   		 "WHERE card.column_id = $1 ", [columns.rows[i].column_id]);
+				columns.rows[i].cards = cards.rows;
+			}
+			res.render('page', {data: JSON.stringify(args)});
+		}
+		else res.redirect('/kanbans');
+	}
+
+	if (req.session.user_id && req.query.id) {
+		getInfo();
+	}
+	else res.redirect('/');
+});
+
+// Изменения существующей доски или добавление новой
+// Если в запросе присутствует id значит необходимо изменить существующую колонку
+// Иначе добавить новую и вернуть id этой новой колонки
 server.post('/change_column', urlencodedParser, function (req, res) {
 	if (req.body.kanban && req.body.title && req.body.place) {
 		if (req.body.id){
@@ -137,6 +155,9 @@ server.post('/change_column', urlencodedParser, function (req, res) {
 	
 });
 
+// Изменения существующей карточки или добавление новой
+// Если в запросе присутствует id значит необходимо изменить существующую карточку
+// Иначе добавить новую и вернуть id этой новой карточки
 server.post('/change_card', urlencodedParser, function (req, res) {
 	if (req.body.column && req.body.text && req.body.place) {
 		if (req.body.id){
@@ -161,12 +182,6 @@ server.post('/delete_card', urlencodedParser, function (req, res) {
 	if (req.body.id) {
 		pool.query("DELETE FROM card WHERE card_id=$1",[req.body.id]);
 	}
-});
-
-server.post('/add_kanban', urlencodedParser, function (req, res) {
-	pool.query("INSERT INTO kanban VALUES(DEFAULT,$1,$2) RETURNING kanban_id",[req.body.title, req.session.user_id], (err, res1) => {
-		res.send(res1.rows[0].kanban_id.toString());
-	})
 });
 
 server.listen(process.env.PORT,

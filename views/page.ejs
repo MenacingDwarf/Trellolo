@@ -7,11 +7,14 @@
 </head>
 <body>
 	<% data = JSON.parse(data) %>
+	<!-- Шапка сайта с кнопками выхода и помощи !-->
 	<header class="head"><a href="/kanbans"><img src="logo.png"></a>
 		<span class="kanban-title"><%= data.kanban.title %></span>
 		<div class="logout"><span class="help" onclick="show('block')">Помощь</span><a href="/logout">Выйти</a></div>
 	</header>
 	<section class="columns">
+
+		<!-- Окно помощи !-->
 		<div onclick="show('none')" id="wrap"></div>
 		<div id="window">
 			<div class="krest" onclick="show('none')"><div class="cross"></div></div>

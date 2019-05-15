@@ -1,3 +1,7 @@
+// Процесс добавления доски
+
+// Начать добавления, прикрепляется к кнопке "Новая доска..."
+// Преобразует эту кнопку в окно ввода названия новой доски
 function startAddingKanban(elem) {
 	var kanbans = elem.parentNode;
 	var kanban = document.createElement('div');
@@ -30,6 +34,9 @@ function startAddingKanban(elem) {
   	kanbans.querySelectorAll('textarea')[0].focus();
 }
 
+// Добавить доску на экран
+// Прикрепляется к кнопке "Добавить доску"
+// Заменяет поля ввода названия новой доски на доску с соответствующим названием
 var addKanban = async(elem) => {
 	var text = elem.parentNode.parentNode.querySelectorAll('textarea')[0].value;
 	if (text) {
@@ -39,10 +46,15 @@ var addKanban = async(elem) => {
 	}
 }
 
+// Прекратить добавление доски
+// Прикрепляется к крестику
+// Заменяет поле ввода названия новой доски на кнопку "Новая доска"
 function stopAddingKanban(elem) {
 	replaceKanban(elem.parentNode.parentNode);
 }
 
+// Вспомогательная функция для замены доски 
+// или поля ввода названия доски на кнопку "Новая доска"
 function replaceKanban(elem) {
 	var kanban = document.createElement('div');
 	kanban.className = 'kanban add-kanban';
@@ -51,12 +63,17 @@ function replaceKanban(elem) {
 	elem.parentNode.replaceChild(kanban,elem);
 }
 
+// Обработчик нажатия клавиши
+// При вводе клавиши enter добавляем новую доску
 function pressEnter(e) {
   if (e.keyCode == 13) {
     e.target.parentNode.querySelectorAll('.add-card-button')[0].click();
   } 
 }
 
+// Функции-запросы для связи с сервером и изменения данных в базе данных
+
+// Отправить данные о новой доске
 function sendChanges(kanban) {
 	var ans = '';
 
@@ -76,6 +93,7 @@ function sendChanges(kanban) {
 	xhr.send(body);	
 }
 
+// Создание новой доски с соответствующим именем и идентификатором
 function createKanban(id,title,next) {
 	var kanban = document.createElement('a');
 	kanban.className = "kanban exist-kanban";
@@ -86,6 +104,7 @@ function createKanban(id,title,next) {
 	return kanban;
 }
 
+// Добавление на страницу всех досок, полученных от сервера при загрузке страницы
 function createKanbans() {
 	var info = document.getElementById('info');
 	var last = document.querySelectorAll('.add-kanban')[0];
@@ -95,10 +114,6 @@ function createKanbans() {
 	})
 }
 
-function pressEnter(e) {
-  if (e.keyCode == 13) {
-    e.target.parentNode.querySelectorAll('.add-card-button')[0].click();
-  } 
-}
-
+// При загрузке страницы первым делом добавляем на страницу все доски,
+// которые нам прислал сервер
 createKanbans();
