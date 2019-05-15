@@ -167,14 +167,21 @@ var DragManager = new function() {
     if (dragObject.empty) {
       dragObject.empty.parentNode.replaceChild(dragObject.elem, dragObject.empty);
       createAvatar();
+      dragObject.avatar.rollback();
+      if (dragObject.avatar.className == "column") {
+        sendChangeColumn(dragObject.avatar);
+      }
+      else sendChangeCard(dragObject.avatar);
     }
-    if (dragObject.droppable) {
+    else if (dragObject.droppable) {
       if (dragObject.droppable.className != "trashhold") {
         dragObject.avatar.rollback();
       }
       else {
         dragObject.droppable.style.background = dragObject.trashholdBackground;
         if (confirm("Удалить элемент?")) {
+          if (dragObject.elem.className == "column") sendDeleteColumn(dragObject.elem.getAttribute('data-id'));
+          else sendDeleteCard(dragObject.elem.getAttribute('data-id'));
           dragObject.elem.hidden = true;
         }
         else {
@@ -280,3 +287,54 @@ function percentwidth(elem){
     var pa = elem.parentNode || elem;
     return ((elem.offsetWidth/pa.offsetWidth)*100).toFixed(2)+'%';
 }
+
+function sendChangeColumn(column) {
+  var place = findObject(column);
+  var title = column.children[0].innerHTML;
+  var xhr = new XMLHttpRequest();
+
+  var body = 'kanban='+ kanban_id + '&id=' + column.getAttribute('data-id') + 
+             '&title=' + encodeURIComponent(title) + '&place=' + place;
+
+  xhr.open("POST", '/change_column', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.send(body); 
+}
+
+function sendChangeCard(card) {
+  var place = findObject(card);
+  var text = card.innerHTML;
+  var column = card.parentNode.parentNode;
+  var xhr = new XMLHttpRequest();
+  var body = 'column='+ column.getAttribute('data-id') + '&id=' + card.getAttribute('data-id') + 
+             '&text=' + encodeURIComponent(text) + '&place=' + place;
+
+  console.log(body);
+  xhr.open("POST", '/change_card', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.send(body);
+}
+
+  function sendDeleteColumn(id) {
+    var xhr = new XMLHttpRequest();
+
+    var body = 'id=' + id;
+
+    xhr.open("POST", '/delete_column', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.send(body); 
+  }
+
+  function sendDeleteCard(id) {
+    var xhr = new XMLHttpRequest();
+
+    var body = 'id=' + id;
+
+    xhr.open("POST", '/delete_card', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.send(body); 
+  }

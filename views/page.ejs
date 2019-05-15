@@ -3,6 +3,7 @@
 <head>
 	<title>Trellolo</title>
 	<link rel="stylesheet" type="text/css" href="style.css">
+	<script>var data = JSON.parse('<%- data %>');var kanban_id = data.kanban_id;</script>
 </head>
 <body>
 	<header class="head"><a href="/kanbans"><img src="logo.png"></a><div class="logout"><a href="/logout">Выйти</a></div></header>
@@ -12,7 +13,6 @@
   		</div>
 	</section>
   	<footer class="trashhold"><img src="trash.png"></footer>
-  	<div hidden="hidden" id="info"><%= data %></div>
 <script type="text/javascript" src="script.js"></script>
 <script type="text/javascript" src="drag_and_drop.js"></script>
 </body>

@@ -33,7 +33,6 @@ function insertCard(id,text,column,next=undefined) {
   card.innerHTML = text;
   card.setAttribute("ondblclick", "startChangingCard(this)");
   card.setAttribute("data-id", id);
-  
   if (next) {
     column.children[1].insertBefore(card,next);
   }
@@ -47,14 +46,14 @@ function sendNewColumn(column) {
 
   var body = 'kanban='+ kanban_id + '&title=' + encodeURIComponent(title) + '&place=' + place;
 
-  xhr.open("POST", '/add_column', true);
+  xhr.open("POST", '/change_column', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  console.log(body);
 
   xhr.onreadystatechange = function() {
     if (this.readyState != 4) return;
 
     column.setAttribute('data-id', this.responseText);
-    console.log(column.getAttribute('data-id'))
   }
 
   xhr.send(body); 
@@ -67,7 +66,7 @@ function sendNewCard(card) {
   var xhr = new XMLHttpRequest();
   var body = 'column='+ column.getAttribute('data-id') + '&text=' + encodeURIComponent(text) + '&place=' + place;
 
-  xhr.open("POST", '/add_card', true);
+  xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
   xhr.onreadystatechange = function() {
@@ -78,6 +77,34 @@ function sendNewCard(card) {
 
   xhr.send(body); 
 }
+
+function sendChangeColumn(column) {
+  var place = findObject(column);
+  var title = column.children[0].innerHTML;
+  var xhr = new XMLHttpRequest();
+
+  var body = 'kanban='+ kanban_id + '&id=' + column.getAttribute('data-id') + 
+             '&title=' + encodeURIComponent(title) + '&place=' + place;
+
+  xhr.open("POST", '/change_column', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.send(body); 
+}
+
+function sendChangeCard(card) {
+  var place = findObject(card);
+  var text = card.innerHTML;
+  var column = card.parentNode.parentNode;
+  var xhr = new XMLHttpRequest();
+  var body = 'column='+ column.getAttribute('data-id') + '&id=' + card.getAttribute('data-id') + 
+             '&text=' + encodeURIComponent(text) + '&place=' + place;
+
+  console.log(body);
+  xhr.open("POST", '/change_card', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  xhr.send(body); }
 
 // Добавление новой карточки или колонки
 // Во всех функциях входной параметр elem - кнопка, к которой прикреплена эта функция
@@ -164,7 +191,6 @@ var add_column = function(elem) {
 	new_column = column.parentNode.insertBefore(new_column,column);
 
   sendNewColumn(new_column);
-  sendChanges();
 	stop_adding_column(elem);
 }
 
@@ -189,6 +215,7 @@ var startChangingCard = function(elem) {
     input.className = "card";
     input.value = elem.innerHTML;
     input.onkeydown = pressEnter;
+    input.setAttribute('data-id',elem.getAttribute('data-id'));
     oldCard = elem.innerHTML;
     
     elem.parentNode.parentNode.replaceChild(make_buttons("Изменить карточку", "changeCard(this)", "stopChangingCard(this)"),
@@ -202,14 +229,17 @@ var startChangingCard = function(elem) {
 // Заменяет текст карточки на тот, который в поле ввода
 // Функция прикрепляется к кнопке "Изменить карточку"
 var changeCard = function(elem) {
-  var textarea = elem.parentNode.parentNode.children[1].querySelectorAll('textarea.card')[0];
+  var column = elem.parentNode.parentNode;
+  var textarea = column.children[1].querySelectorAll('textarea.card')[0];
   var card = document.createElement('div');
   card.className = "card";
   card.innerHTML = textarea.value;
+  card.setAttribute('data-id',textarea.getAttribute('data-id'));
   card.setAttribute("ondblclick", "startChangingCard(this)");
   
   replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
   textarea.parentNode.replaceChild(card,textarea);
+  sendChangeCard(card);
 }
 
 // Отмена изменения
@@ -248,7 +278,8 @@ var startChangingTitle = function(elem) {
 // Заменяет текст заголовка колонки на тот, который в поле ввода
 // Функция прикрепляется к кнопке "Изменить колонку"
 var changeTitle = function(elem) {
-  var input = elem.parentNode.parentNode.children[0];
+  var column = elem.parentNode.parentNode;
+  var input = column.children[0];
 
   var title = document.createElement('div');
   title.className = "column-title";
@@ -256,7 +287,8 @@ var changeTitle = function(elem) {
   title.setAttribute("ondblclick","startChangingTitle(this)");
 
   replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-  input.parentNode.replaceChild(title,input);
+  column.replaceChild(title,input);
+  sendChangeColumn(column);
 }
 
 // Отмена изменения
@@ -309,13 +341,12 @@ var make_buttons = function(text,add_function,close_function) {
   return buttons;
 }
 
-function sendChanges() {
-  var xhr = new XMLHttpRequest();
-
-  xhr.open("POST", '/save', true);
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-  xhr.send();
+function findObject(obj) {
+  var parent = obj.parentNode;
+  for (var i = 0; i<parent.children.length; i++) {
+    if (parent.children[i] == obj) return i;
+  }
+  return -1;
 }
 
 // Обработка нажатия клавиши ентер при вводе текста в текстовое поле
@@ -326,16 +357,14 @@ function pressEnter(e) {
 }
 
 function fillColumns() {
-  var info = JSON.parse(document.getElementById("info").innerHTML);
-  info.columns.sort((a,b) => (a.place > b.place) ? 1 : -1);
-  info.columns.forEach((item) => {
+  data.columns.sort((a,b) => (a.place > b.place) ? 1 : -1);
+  data.columns.forEach((item) => {
     var column = insertColumn(item.column_id,item.title);
     item.cards.sort((a,b) => (a.place > b.place) ? 1 : -1);
     item.cards.forEach((card) => {
       insertCard(card.card_id,card.text,column);
     })
   });
-  return info.kanban_id;
 }
 
-var kanban_id = fillColumns();
+fillColumns();
