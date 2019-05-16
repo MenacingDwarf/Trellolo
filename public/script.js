@@ -1,4 +1,6 @@
 // Запросы на сервер с различными данными
+
+// Запрос на создание новой колонки
 function sendNewColumn(column) {
   var place = column.parentNode.children.length-2;
   var title = column.children[0].innerHTML;
@@ -8,17 +10,18 @@ function sendNewColumn(column) {
 
   xhr.open("POST", '/change_column', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  console.log(body);
 
+  // В ответе с сервера приходит id новой колонки, 
+  // который записыается в атрибут data-it соответствующей колонки
   xhr.onreadystatechange = function() {
     if (this.readyState != 4) return;
-
     column.setAttribute('data-id', this.responseText);
   }
 
   xhr.send(body); 
 }
 
+// Запрос на создание новой карточки
 function sendNewCard(card) {
   var place = card.parentNode.children.length-1;
   var text = card.innerHTML;
@@ -29,6 +32,8 @@ function sendNewCard(card) {
   xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
+  // В ответе с сервера приходит id новой карточки, 
+  // который записыается в атрибут data-it соответствующей карточки
   xhr.onreadystatechange = function() {
     if (this.readyState != 4) return;
 
@@ -38,6 +43,7 @@ function sendNewCard(card) {
   xhr.send(body); 
 }
 
+// Запрос на изменение существующей колонки
 function sendChangeColumn(column) {
   var place = findObject(column);
   var title = column.children[0].innerHTML;
@@ -52,6 +58,7 @@ function sendChangeColumn(column) {
   xhr.send(body); 
 }
 
+// Запрос на изменение существующей карточки
 function sendChangeCard(card) {
   var place = findObject(card);
   var text = card.innerHTML;
@@ -68,26 +75,35 @@ function sendChangeCard(card) {
 }
 
 // Вставка колонки или карточки
+
+// Вставка колонки перед объектом next
+// При next=undefined колонка вставляется в конец
 function insertColumn(id,title_text,next=undefined) {
+  // Формирование заголовка колонки
   var title = document.createElement('div');
   title.className = "column-title";
   title.innerHTML = title_text;
   title.setAttribute("ondblclick","startChangingTitle(this)");
 
+  // Формирование кнопки добавления карточки в список карточек данной колонки
   var add = document.createElement('div');
   add.className = "add-card";
   add.setAttribute("onclick", "start_adding_card(this)");
   add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
 
+  // Объект, хранящий все карточки в данной колонки
   var cards = document.createElement('div');
   cards.className = "cards";
 
+  // Создание колонки и помещение в неё всех сформированных элементов
   var new_column = document.createElement('div');
   new_column.className = "column";
   new_column.setAttribute("data-id", id);
   new_column.appendChild(title);
   new_column.appendChild(cards);
   new_column.appendChild(add);
+
+  // Вставка колонки на страницу
   if (next) {
     return next.parentNode.insertBefore(new_column,next);
   }
@@ -97,16 +113,21 @@ function insertColumn(id,title_text,next=undefined) {
   }
 }
 
+// Вставка карточки перед объектом next
+// При next=undefined карточка вставляется в конец
 function insertCard(id,text,column,next=undefined) {
+  // Создание карточки
   var card = document.createElement('div');
   card.className = "card";
   card.innerHTML = text;
   card.setAttribute("ondblclick", "startChangingCard(this)");
   card.setAttribute("data-id", id);
+
+  // Вставка карточки в список карточек соответствующей колонки
   if (next) {
-    column.children[1].insertBefore(card,next);
+    return column.children[1].insertBefore(card,next);
   }
-  else column.children[1].appendChild(card);
+  else return column.children[1].appendChild(card);
 }
 
 // Добавление новой карточки или колонки
@@ -135,13 +156,10 @@ var add_card = function(elem) {
   if (textarea.value) {
     var cards = textarea.parentNode;
 
-  	var card = document.createElement('div');
-  	card.className = "card";
-  	card.innerHTML = textarea.value;
-    card.setAttribute("ondblclick", "startChangingCard(this)");
+  	insertCard(undefined,textarea.value,cards.parentNode);
   	
   	replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-  	cards.replaceChild(card,textarea);
+  	cards.removeChild(textarea);
     sendNewCard(cards.children[cards.children.length - 1]);
   }
 }
@@ -175,31 +193,14 @@ var add_column = function(elem) {
 	var column = elem.parentNode.parentNode;
 	var textarea = column.children[0];
   if (textarea.value) {
-  	var title = document.createElement('div');
-  	title.className = "column-title";
-  	title.innerHTML = textarea.value;
-    title.setAttribute("ondblclick","startChangingTitle(this)");
-
-  	var add = document.createElement('div');
-  	add.className = "add-card";
-  	add.setAttribute("onclick", "start_adding_card(this)");
-  	add.innerHTML = "<div class=\"plus\"></div>Добавить ещё одну карточку</div>";
-
-  	var cards = document.createElement('div');
-  	cards.className = "cards";
-
-  	var new_column = document.createElement('div');
-  	new_column.className = "column";
-  	new_column.appendChild(title);
-  	new_column.appendChild(cards);
-  	new_column.appendChild(add);
-  	new_column = column.parentNode.insertBefore(new_column,column);
-
+    var new_column = insertColumn(undefined,textarea.value,column);
     sendNewColumn(new_column);
   	stop_adding_column(elem);
   }
 }
-
+// Отмена добавления
+// Отменяет добавление новой колонки
+// Функция прикрепляется к крестику
 var stop_adding_column = function(elem) {
 	var column = elem.parentNode.parentNode;
 	column.removeChild(column.children[0]);
@@ -209,6 +210,8 @@ var stop_adding_column = function(elem) {
 // Изменение названия колонки и карточки
 // Изменение происходит путём двойного нажатия на карточку или заголовок колонки
 // Во всех функциях входной параметр elem - кнопка, к которой прикреплена эта функция
+
+// Храним старые значения заголовка колонки и карточки для отмены изменений
 var oldTitle = undefined;
 var oldCard = undefined;
 
@@ -238,14 +241,9 @@ var changeCard = function(elem) {
   var column = elem.parentNode.parentNode;
   var textarea = column.children[1].querySelectorAll('textarea.card')[0];
   if (textarea.value) {
-    var card = document.createElement('div');
-    card.className = "card";
-    card.innerHTML = textarea.value;
-    card.setAttribute('data-id',textarea.getAttribute('data-id'));
-    card.setAttribute("ondblclick", "startChangingCard(this)");
-    
+    var card = insertCard(textarea.getAttribute('data-id'),textarea.value,column,textarea)
     replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-    textarea.parentNode.replaceChild(card,textarea);
+    textarea.parentNode.removeChild(textarea);
     sendChangeCard(card);
   }
 }
@@ -254,14 +252,12 @@ var changeCard = function(elem) {
 // Отменяет изменение карточки
 // Функция прикрепляется к крестику
 var stopChangingCard = function(elem) {
-  var textarea = elem.parentNode.parentNode.children[1].querySelectorAll('textarea.card')[0];
-  var card = document.createElement('div');
-  card.className = "card";
-  card.innerHTML = oldCard;
-  card.setAttribute("ondblclick", "startChangingCard(this)");
+  var column = elem.parentNode.parentNode;
+  var textarea = column.children[1].querySelectorAll('textarea.card')[0];
+  var card = insertCard(textarea.getAttribute('data-id'),oldCard,column,textarea);
   
   replace_buttons(elem,"start_adding_card(this)","Добавить ещё одну карточку");
-  textarea.parentNode.replaceChild(card,textarea);
+  textarea.parentNode.removeChild(textarea);
 }
 
 // Начать изменение колонки
