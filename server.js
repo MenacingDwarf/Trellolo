@@ -28,7 +28,9 @@ server.set('view engine', 'ejs');
 // Иначе страницу с окном авторизации
 server.get('/',function(req,res){
 	if (req.session.user_id) res.redirect('/kanbans');
-	else res.render('start-page');
+	else res.render('start-page', {message: req.session.message});
+	req.session.message = undefined;
+	req.session.save();
 });
 
 // Авторизация с серверной валидацией
@@ -38,15 +40,20 @@ server.post('/login/', urlencodedParser, function (req, res) {
 		if (req.body.user_name.length >= 6 && req.body.password.length >= 6) {
 			pool.query("SELECT user_id,user_name,password from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res1) => {
 				if (res1.rows.length == 0) {
+					req.session.message = 'Пользователь не зарегистрирован!';
+					req.session.save();
 					res.redirect('/');
 				}
 				else {
 					bcrypt.compare(req.body.password,res1.rows[0].password,function(err,ans){
 						if (ans == false) {
+							req.session.message = 'Неправильный пароль!';
+							req.session.save();
 							res.redirect('/');
 						}
 						else {
 							req.session.user_id = res1.rows[0].user_id;
+							req.session.message = undefined;
 							req.session.save();
 							res.redirect('/kanbans')
 						}
@@ -64,6 +71,8 @@ server.post('/register/', urlencodedParser, function (req, res) {
 		if (req.body.user_name.length >= 6 && req.body.password.length >= 6) {
 			pool.query("SELECT user_name from \"user\" WHERE user_name = $1",[req.body.user_name],(err,res1) => {
 				if (res1.rows.length != 0) {
+					req.session.message = 'Введите другое имя пользователя!';
+					req.session.save();
 					res.redirect('/');
 				}
 				else {
@@ -104,10 +113,21 @@ server.get('/kanbans',function(req,res){
 
 
 // Добавление новой доски в базу данных
-server.post('/add_kanban', urlencodedParser, function (req, res) {
-	pool.query("INSERT INTO kanban VALUES(DEFAULT,$1,$2) RETURNING kanban_id",[req.body.title, req.session.user_id], (err, res1) => {
+server.post('/change_kanban', urlencodedParser, function (req, res) {
+	if (req.body.id) {
+		pool.query("UPDATE kanban SET title=$1 WHERE kanban_id=$2",
+				   [req.body.title,req.body.id]);
+	}
+	else pool.query("INSERT INTO kanban VALUES(DEFAULT,$1,$2) RETURNING kanban_id",
+					[req.body.title, req.session.user_id], (err, res1) => {
 		res.send(res1.rows[0].kanban_id.toString());
 	})
+});
+
+server.post('/delete_kanban', urlencodedParser, function (req, res) {
+	if (req.body.id) {
+		pool.query("DELETE FROM kanban WHERE kanban_id=$1",[req.body.id]);
+	}
 });
 
 // Загрузка доски со всей необходимой информацией

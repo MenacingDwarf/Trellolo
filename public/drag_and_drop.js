@@ -283,6 +283,15 @@ function getCoords(elem) { // кроме IE8-
   };
 }
 
+// Функция ищет объект среди детей его родителя и возвращает его порядковый номер
+function findObject(obj) {
+  var parent = obj.parentNode;
+  for (var i = 0; i<parent.children.length; i++) {
+    if (parent.children[i] == obj) return i;
+  }
+  return -1;
+}
+
 // Запросы к серверу об изменениях на доске
 function sendChangeColumn(column) {
   var place = findObject(column);
@@ -291,7 +300,7 @@ function sendChangeColumn(column) {
 
   var body = 'kanban='+ kanban_id + '&id=' + column.getAttribute('data-id') + 
              '&title=' + encodeURIComponent(title) + '&place=' + place;
-
+  console.log(body);
   xhr.open("POST", '/change_column', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 

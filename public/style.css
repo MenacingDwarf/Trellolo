@@ -106,6 +106,10 @@ input.register {
 input.register:hover {
 	cursor: pointer;
 }
+.alert {
+	color: red;
+	text-align: center;
+}
 
 /* Стили окна с досками */
 .kanbans {
@@ -117,6 +121,7 @@ input.register:hover {
 	background-color: white;
 }
 .kanban {
+	position: relative;
 	width: 26%;
 	height: 10em;
 	padding: 10px;
@@ -134,6 +139,32 @@ input.register:hover {
 }
 .kanban > textarea {
 	height: 7em;
+}
+.edit {
+	height: 1em;
+	text-align: right;
+	color: white;
+	display: none;
+	position: absolute;
+	bottom: 10px;
+	right: 10px;
+}
+.edit:hover {
+	cursor: pointer;
+	opacity: 0.8;
+}
+.delete {
+	height: 1em;
+	text-align: right;
+	color: #FF4E4A;
+	display: none;
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+}
+.delete:hover {
+	cursor: pointer;
+	opacity: 0.8;
 }
 .add-kanban {
 	display: flex;

@@ -1,24 +1,53 @@
-// Процесс добавления доски
+// Создание новой доски с соответствующим именем и идентификатором
+function createKanban(id,title_text,next) {
+	var kanban = document.createElement('div');
+	kanban.className = "kanban exist-kanban";
+	kanban.setAttribute('onclick','return location.href = \'/kanban?id='+id+'\'');
+	if (id) kanban.setAttribute('data-id',id);
 
-// Начать добавления, прикрепляется к кнопке "Новая доска..."
-// Преобразует эту кнопку в окно ввода названия новой доски
-function startAddingKanban(elem) {
-	var kanbans = elem.parentNode;
+	var title = document.createElement('div');
+	title.className = 'title';
+	title.innerHTML = title_text;
+
+	var edit = document.createElement('div');
+	edit.className = "edit";
+	edit.innerHTML = "ред.";
+	edit.setAttribute("onclick",'startChangeKanban(event)');
+
+	var del = document.createElement('div');
+	del.className = "delete";
+	del.innerHTML = "удалить";
+	del.setAttribute("onclick",'deleteKanban(event)');
+
+	kanban.appendChild(title);
+	kanban.appendChild(del);
+	kanban.appendChild(edit);
+	kanban.setAttribute('onmouseover','showButtons(this,\'inline-block\')');
+	kanban.setAttribute('onmouseout','showButtons(this,\'none\')');
+	kanban = next.parentNode.insertBefore(kanban,next);
+	return kanban;
+}
+
+function createTextareaKanban(button_text,add_func,cancel_func,text=undefined) {
 	var kanban = document.createElement('div');
 	kanban.className = "kanban";
+
 	var input = document.createElement('textarea');
 	input.className = "card";
-	input.setAttribute("placeholder","Введите название доски");
+	if (text) {
+		input.value = text;
+	}
+	else input.setAttribute("placeholder","Введите название доски");
 	input.onkeydown = pressEnter;
 
 	var add = document.createElement('div');
   	add.className = "add-card-button";
-  	add.innerHTML = "Добавить доску";
-  	add.setAttribute("onclick",'addKanban(this)');
+  	add.innerHTML = button_text;
+  	add.setAttribute("onclick",add_func);
 
   	var close = document.createElement('div');
   	close.className = "close";
-  	close.setAttribute("onclick", 'stopAddingKanban(this)');
+  	close.setAttribute("onclick", cancel_func);
   	var cross = document.createElement('div');
   	cross.className = "cross";
   	close.appendChild(cross);
@@ -29,7 +58,16 @@ function startAddingKanban(elem) {
 
   	kanban.appendChild(input);
   	kanban.appendChild(buttons);
+  	return kanban;
+}
 
+// Процесс добавления доски
+
+// Начать добавления, прикрепляется к кнопке "Новая доска..."
+// Преобразует эту кнопку в окно ввода названия новой доски
+function startAddingKanban(elem) {
+	var kanbans = elem.parentNode;
+	var kanban = createTextareaKanban("Добавить доску",'addKanban(this)','stopAddingKanban(this)');
   	kanbans.replaceChild(kanban,elem);
   	kanbans.querySelectorAll('textarea')[0].focus();
 }
@@ -37,10 +75,10 @@ function startAddingKanban(elem) {
 // Добавить доску на экран
 // Прикрепляется к кнопке "Добавить доску"
 // Заменяет поля ввода названия новой доски на доску с соответствующим названием
-var addKanban = async(elem) => {
+function addKanban(elem) {
 	var text = elem.parentNode.parentNode.querySelectorAll('textarea')[0].value;
 	if (text) {
-		var kanban = createKanban(0,elem.parentNode.parentNode.querySelectorAll('textarea')[0].value,elem.parentNode.parentNode);
+		var kanban = createKanban(undefined,text,elem.parentNode.parentNode);
 		sendChanges(kanban);
 		replaceKanban(elem.parentNode.parentNode);
 	}
@@ -75,33 +113,88 @@ function pressEnter(e) {
 
 // Отправить данные о новой доске
 function sendChanges(kanban) {
-	var ans = '';
+	var title = kanban.querySelectorAll('.title')[0].innerHTML;
 
 	var xhr = new XMLHttpRequest();
+	var body = '';
+	if (kanban.getAttribute('data-id')) body = 'id=' + kanban.getAttribute('data-id') + '&';
+	body += 'title=' + encodeURIComponent(title);
 
-	var body = 'title=' + encodeURIComponent(kanban.innerHTML);
-
-	xhr.open("POST", '/add_kanban', true);
+	xhr.open("POST", '/change_kanban', true);
 	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
 	xhr.onreadystatechange = function() {
 	  if (this.readyState != 4) return;
 
-	  kanban.setAttribute('id', this.responseText);
+	  kanban.setAttribute('data-id', this.responseText);
 	}
 
 	xhr.send(body);	
 }
 
-// Создание новой доски с соответствующим именем и идентификатором
-function createKanban(id,title,next) {
-	var kanban = document.createElement('a');
-	kanban.className = "kanban exist-kanban";
-	kanban.setAttribute('href','/kanban?id='+id);
-	kanban.id = id;
-	kanban.innerHTML = title;
-	kanban = next.parentNode.insertBefore(kanban,next);
-	return kanban;
+function sendDelete(kanban) {
+	var xhr = new XMLHttpRequest();
+	var body = 'id=' + kanban.getAttribute('data-id');
+
+	xhr.open("POST", '/delete_kanban', true);
+	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+	xhr.send(body);	
+}
+
+function showButtons(kanban,state) {
+	var edit = kanban.querySelectorAll('.edit')[0];
+	var del = kanban.querySelectorAll('.delete')[0];
+	if (edit) {
+		edit.style.display = state;
+	}
+	if (del) {
+		del.style.display = state;
+	}
+}
+
+
+function deleteKanban(event) {
+	event.stopPropagation();
+	if (confirm("Удалить элемент?")) {
+		var kanban = event.target.parentNode;
+		sendDelete(kanban);
+		kanban.parentNode.removeChild(kanban);
+	}
+}
+
+var oldTitle = undefined;
+
+function startChangeKanban(event) {
+	event.stopPropagation();
+	var kanban = event.target.parentNode;
+	var text = kanban.querySelectorAll('.title')[0].innerHTML;
+	oldTitle = text;
+	var newKanban = createTextareaKanban('Изменить доску','changeKanban(this)','stopChangeKanban(this)',text);
+	newKanban.setAttribute('data-id',kanban.getAttribute('data-id'));
+	kanban.parentNode.replaceChild(newKanban,kanban);
+	newKanban.parentNode.querySelectorAll('textarea')[0].focus();
+}
+
+function changeKanban(elem) {
+	var kanban = elem.parentNode.parentNode;
+	var text = kanban.querySelectorAll('textarea')[0].value;
+	oldTitle = undefined;
+	if (text) {
+		var new_kanban = createKanban(kanban.getAttribute('data-id'),text,kanban);
+		sendChanges(new_kanban);
+		kanban.parentNode.removeChild(kanban);
+	}
+}
+
+function stopChangeKanban(elem) {
+	var kanban = elem.parentNode.parentNode;
+	var text = oldTitle;
+	oldTitle = undefined;
+	if (text) {
+		var new_kanban = createKanban(kanban.getAttribute('data-id'),text,kanban);
+		kanban.parentNode.removeChild(kanban);
+	}
 }
 
 // Добавление на страницу всех досок, полученных от сервера при загрузке страницы
@@ -109,6 +202,7 @@ function createKanbans() {
 	var info = document.getElementById('info');
 	var last = document.querySelectorAll('.add-kanban')[0];
 	var kanbans = JSON.parse(info.innerHTML);
+	kanbans.sort((a,b) => (a.kanban_id > b.kanban_id) ? 1 : -1);
 	kanbans.forEach((item, i, arr) => {
 		createKanban(item.kanban_id,item.title,last);
 	})
