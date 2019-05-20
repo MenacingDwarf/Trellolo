@@ -2,11 +2,15 @@
 
 // Запрос на создание новой колонки
 function sendNewColumn(column) {
-  var place = column.parentNode.children.length-2;
   var title = column.children[0].innerHTML;
   var xhr = new XMLHttpRequest();
 
-  var body = 'kanban='+ kanban_id + '&title=' + encodeURIComponent(title) + '&place=' + place;
+  var body = 'kanban='+ kanban_id + '&title=' + encodeURIComponent(title);
+  if (column.parentNode.children.length > 2) {
+    var place = column.parentNode.children.length-3;
+    var last_column = column.parentNode.children[place].getAttribute('data-id')
+    body += '&last_column=' + last_column;
+  }
 
   xhr.open("POST", '/change_column', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -23,11 +27,16 @@ function sendNewColumn(column) {
 
 // Запрос на создание новой карточки
 function sendNewCard(card) {
-  var place = card.parentNode.children.length-1;
+  
   var text = card.innerHTML;
   var column = card.parentNode.parentNode;
   var xhr = new XMLHttpRequest();
-  var body = 'column='+ column.getAttribute('data-id') + '&text=' + encodeURIComponent(text) + '&place=' + place;
+  var body = 'column='+ column.getAttribute('data-id') + '&text=' + encodeURIComponent(text);
+  if (card.parentNode.children.length > 1) {
+    var place = card.parentNode.children.length-2;
+    var last_card = card.parentNode.children[place].getAttribute('data-id');
+    body += '&last_card=' + last_card;
+  }
 
   xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -50,7 +59,7 @@ function sendChangeColumn(column) {
   var xhr = new XMLHttpRequest();
 
   var body = 'kanban='+ kanban_id + '&id=' + column.getAttribute('data-id') + 
-             '&title=' + encodeURIComponent(title) + '&place=' + place;
+             '&title=' + encodeURIComponent(title);
 
   xhr.open("POST", '/change_column', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -65,9 +74,8 @@ function sendChangeCard(card) {
   var column = card.parentNode.parentNode;
   var xhr = new XMLHttpRequest();
   var body = 'column='+ column.getAttribute('data-id') + '&id=' + card.getAttribute('data-id') + 
-             '&text=' + encodeURIComponent(text) + '&place=' + place;
-
-  console.log(body);
+             '&text=' + encodeURIComponent(text);
+             
   xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
@@ -368,16 +376,28 @@ function show(state){
   document.getElementById('wrap').style.display = state;      
 }
 
-// Заполнение доски колонками и карточками, полученными с сервера
-function fillKanban() {
-  data.columns.sort((a,b) => (a.place > b.place) ? 1 : -1);
-  data.columns.forEach((item) => {
-    var column = insertColumn(item.column_id,item.title);
-    item.cards.sort((a,b) => (a.place > b.place) ? 1 : -1);
-    item.cards.forEach((card) => {
-      insertCard(card.card_id,card.text,column);
-    })
-  });
+function fillColumn(cards, column) {
+  if (cards.length != 0) {
+    var cur_card = cards.find(c => !c.prev_card);
+    insertCard(cur_card.card_id, cur_card.text, column);
+    while (cur_card.next_card) {
+      cur_card = cards.find(c => c.card_id == cur_card.next_card);
+      insertCard(cur_card.card_id, cur_card.text, column);
+    }
+  }
 }
 
-fillKanban();
+function fillKanban(columns) {
+  if (columns.length != 0) {
+    var cur_column = columns.find(c => !c.prev_column);
+    var column = insertColumn(cur_column.column_id, cur_column.title);
+    fillColumn(cur_column.cards, column);
+    while (cur_column.next_column) {
+      cur_column = columns.find(c => c.column_id == cur_column.next_column);
+      column = insertColumn(cur_column.column_id, cur_column.title);
+      fillColumn(cur_column.cards, column);
+    }
+  }
+}
+
+fillKanban(data.columns);

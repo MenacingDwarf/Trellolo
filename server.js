@@ -139,11 +139,11 @@ server.get('/kanban', function(req,res){
 		}
 		else if (kanban.rows[0].owner == req.session.user_id) {
 			var args = {kanban: {id: req.query.id, title: kanban.rows[0].title}};
-			var columns = await pool.query("SELECT column_id,title,place FROM kanbas_column " + 
-					   				   	   "WHERE kanbas_column.kanban_id = $1 ",[req.query.id]);
+			var columns = await pool.query("SELECT * FROM kanban_column " + 
+					   				   	   "WHERE kanban_column.kanban_id = $1 ",[req.query.id]);
 			args.columns = columns.rows;
 			for (var i = 0; i<columns.rows.length; i++) {
-				var cards = await pool.query("SELECT card_id,text,place FROM card " + 
+				var cards = await pool.query("SELECT * FROM card " + 
 					   				   		 "WHERE card.column_id = $1 ", [columns.rows[i].column_id]);
 				columns.rows[i].cards = cards.rows;
 			}
@@ -153,7 +153,8 @@ server.get('/kanban', function(req,res){
 	}
 
 	if (req.session.user_id && req.query.id) {
-		getInfo();
+		if (!isNaN(req.query.id)) getInfo();
+		else res.redirect('/');
 	}
 	else res.redirect('/');
 });
@@ -162,15 +163,69 @@ server.get('/kanban', function(req,res){
 // Если в запросе присутствует id значит необходимо изменить существующую колонку
 // Иначе добавить новую и вернуть id этой новой колонки
 server.post('/change_column', urlencodedParser, function (req, res) {
-	if (req.body.kanban && req.body.title && req.body.place) {
-		if (req.body.id){
-			pool.query("UPDATE kanbas_column SET title=$1, place=$2 WHERE column_id=$3",
-					   [req.body.title,req.body.place,req.body.id]);
+	function InsertColumn() {
+		if (req.body.last_column) {
+			pool.query("INSERT INTO kanban_column VALUES(DEFAULT,$1,$2,$3,NULL) RETURNING column_id",
+				       [req.body.kanban,req.body.title,req.body.last_column],(err,res1) => {
+				pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[res1.rows[0].column_id,req.body.last_column]);
+				res.send(res1.rows[0].column_id.toString());
+			})
 		}
-		else pool.query("INSERT INTO kanbas_column VALUES(DEFAULT,$1,$2,$3) RETURNING column_id",
-				   [req.body.kanban,req.body.title,req.body.place], (err,res1) => {
-			res.send(res1.rows[0].column_id.toString())
-		});
+		else {
+			pool.query("INSERT INTO kanban_column VALUES(DEFAULT,$1,$2,NULL,NULL) RETURNING column_id",
+				       [req.body.kanban,req.body.title],(err,res1) => {
+				res.send(res1.rows[0].column_id.toString());
+			})
+		}
+	}
+
+	var ReplaceColumn = async() => {
+		var column = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1",[req.body.id]);
+		column = column.rows[0];
+
+		if (column.next_column) {
+			await pool.query("UPDATE kanban_column SET prev_column = $1 WHERE column_id = $2",[column.prev_column,column.next_column]);
+		}
+		if (column.prev_column) {
+			await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.next_column,column.prev_column]);
+		}
+
+
+		if (req.body.next) {
+			var next = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1",[req.body.next]);
+			next = next.rows[0];
+
+			
+			
+			await pool.query("UPDATE kanban_column SET prev_column = $1, next_column = $2 WHERE column_id = $3",
+							 [next.prev_column,next.column_id,column.column_id]);
+
+			if (next.prev_column) {
+				await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.column_id,next.prev_column]);
+			}
+
+			await pool.query("UPDATE kanban_column SET prev_column = $1 WHERE column_id = $2",[column.column_id,next.column_id]);
+		}
+		else if (req.body.prev) {
+			var prev = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1",[req.body.prev]);
+			prev = prev.rows[0];
+
+			await pool.query("UPDATE kanban_column SET prev_column = $1, next_column = NULL WHERE column_id = $2",
+							 [prev.column_id,column.column_id]);
+
+			await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.column_id,prev.column_id]);
+		}
+
+	}
+
+	if (!req.body.id) {
+		InsertColumn();
+	}
+	else if (req.body.title) {
+		pool.query("UPDATE kanban_column SET title = $1 WHERE column_id = $2",[req.body.title,req.body.id]);
+	}
+	else if (req.body.next || req.body.prev) {
+		ReplaceColumn();
 	}
 	
 });
@@ -179,28 +234,109 @@ server.post('/change_column', urlencodedParser, function (req, res) {
 // Если в запросе присутствует id значит необходимо изменить существующую карточку
 // Иначе добавить новую и вернуть id этой новой карточки
 server.post('/change_card', urlencodedParser, function (req, res) {
-	if (req.body.column && req.body.text && req.body.place) {
-		if (req.body.id){
-			pool.query("UPDATE card SET column_id=$1, text=$2, place=$3 WHERE card_id=$4",
-					   [req.body.column,req.body.text,req.body.place,req.body.id]);
+	function InsertCard() {
+		if (req.body.last_card) {
+			pool.query("INSERT INTO card VALUES(DEFAULT,$1,$2,$3,NULL) RETURNING card_id",
+				       [req.body.column,req.body.text,req.body.last_card],(err,res1) => {
+				pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[res1.rows[0].card_id,req.body.last_card]);
+				res.send(res1.rows[0].card_id.toString());
+			})
 		}
-		else pool.query("INSERT INTO card VALUES(DEFAULT,$1,$2,$3) RETURNING card_id",
-				   [req.body.column,req.body.text,req.body.place], (err,res1) => {
-			res.send(res1.rows[0].card_id.toString())
-		});
+		else {
+			pool.query("INSERT INTO card VALUES(DEFAULT,$1,$2,NULL,NULL) RETURNING card_id",
+				       [req.body.column,req.body.text],(err,res1) => {
+				res.send(res1.rows[0].card_id.toString());
+			})
+		}
 	}
-	
+
+	var ReplaceCard = async() => {
+		var card = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.id]);
+		card = card.rows[0];
+
+		if (card.next_card) {
+			await pool.query("UPDATE card SET prev_card = $1 WHERE card_id = $2",[card.prev_card,card.next_card]);
+		}
+		if (card.prev_card) {
+			await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.next_card,card.prev_card]);
+		}
+
+		if (req.body.next) {
+			var next = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.next]);
+			next = next.rows[0];
+
+			
+			await pool.query("UPDATE card SET column_id = $1, prev_card = $2, next_card = $3 WHERE card_id = $4",
+							 [next.column_id,next.prev_card,next.card_id,card.card_id]);
+
+			if (next.prev_card) {
+				await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.card_id,next.prev_card]);
+			}
+
+			await pool.query("UPDATE card SET prev_card = $1 WHERE card_id = $2",[card.card_id,next.card_id]);
+		}
+		else if (req.body.prev) {
+			var prev = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.prev]);
+			prev = prev.rows[0];
+
+			await pool.query("UPDATE card SET column_id = $1, prev_card = $2, next_card = NULL WHERE card_id = $3",
+							 [prev.column_id,prev.card_id,card.card_id]);
+
+			await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.card_id,prev.card_id]);
+		}
+		else {
+			await pool.query("UPDATE card SET column_id = $1, prev_card = NULL, next_card = NULL WHERE card_id = $2",
+							 [req.body.column, card.card_id]);
+		}
+		
+
+	}
+
+	if (!req.body.id) {
+		InsertCard();
+	}
+	else if (req.body.text) {
+		pool.query("UPDATE card SET text = $1 WHERE card_id = $2",[req.body.text, req.body.id]);
+	}
+	else if (req.body.next || req.body.prev || req.body.column) {
+		ReplaceCard();
+	}
 });
 
 server.post('/delete_column', urlencodedParser, function (req, res) {
+	var deleteColumn = async() => {
+		var column = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1", [req.body.id]);
+		column = column.rows[0];
+
+		if (column.next_column) {
+			await pool.query("UPDATE kanban_column SET prev_column = $1 WHERE column_id = $2",[column.prev_column,column.next_column]);
+		}
+		if (column.prev_column) {
+			await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.next_column,column.prev_column]);
+		}
+		await pool.query("DELETE FROM kanban_column WHERE column_id = $1",[req.body.id]);
+	}
+
 	if (req.body.id) {
-		pool.query("DELETE FROM kanbas_column WHERE column_id=$1",[req.body.id]);
+		deleteColumn();
 	}
 });
 
 server.post('/delete_card', urlencodedParser, function (req, res) {
+	var deleteCard = async() => {
+		var card = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.id]);
+		card = card.rows[0];
+
+		if (card.next_card) {
+			await pool.query("UPDATE card SET prev_card = $1 WHERE card_id = $2",[card.prev_card,card.next_card]);
+		}
+		if (card.prev_card) {
+			await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.next_card,card.prev_card]);
+		}
+		await pool.query("DELETE FROM card WHERE card_id = $1",[req.body.id]);
+	}
 	if (req.body.id) {
-		pool.query("DELETE FROM card WHERE card_id=$1",[req.body.id]);
+		deleteCard();
 	}
 });
 

@@ -37,6 +37,8 @@ var DragManager = new function() {
     // сохраним ширину и высоту объекта
     dragObject.background = getComputedStyle(elem).background;
     dragObject.height = getComputedStyle(elem).height;
+    dragObject.oldPlace = findObject(elem);
+    dragObject.parent = elem.parentNode;
 
     // запомним, что элемент нажат на текущих координатах pageX/pageY
     dragObject.downX = e.pageX;
@@ -169,9 +171,11 @@ var DragManager = new function() {
       createAvatar();
       dragObject.avatar.rollback();
       if (dragObject.avatar.className == "column") {
-        sendChangeColumn(dragObject.avatar);
+        sendReplaceColumn(dragObject.avatar);
       }
-      else sendChangeCard(dragObject.avatar);
+      else {
+        sendReplaceCard(dragObject.avatar, dragObject.parent.parentNode, dragObject.oldPlace);
+      }
     }
     else if (dragObject.droppable) {
       if (dragObject.droppable.className != "trashhold") {
@@ -180,8 +184,8 @@ var DragManager = new function() {
       else {
         dragObject.droppable.style.background = dragObject.trashholdBackground;
         if (confirm("Удалить элемент?")) {
-          if (dragObject.elem.className == "column") sendDeleteColumn(dragObject.elem.getAttribute('data-id'));
-          else sendDeleteCard(dragObject.elem.getAttribute('data-id'));
+          if (dragObject.elem.className == "column") sendDeleteColumn(dragObject.avatar);
+          else sendDeleteCard(dragObject.avatar);
           dragObject.elem.hidden = true;
         }
         else {
@@ -293,51 +297,65 @@ function findObject(obj) {
 }
 
 // Запросы к серверу об изменениях на доске
-function sendChangeColumn(column) {
-  var place = findObject(column);
-  var title = column.children[0].innerHTML;
+function sendReplaceColumn(column) {
+  var next = column.nextSibling;
   var xhr = new XMLHttpRequest();
 
-  var body = 'kanban='+ kanban_id + '&id=' + column.getAttribute('data-id') + 
-             '&title=' + encodeURIComponent(title) + '&place=' + place;
-  console.log(body);
+  var body = 'id=' + column.getAttribute('data-id');
+
+  if (next.getAttribute('data-id')) {
+    body += '&next=' + next.getAttribute('data-id');
+  }
+  else {
+    prev = column.previousSibling;
+    if (prev) body += '&prev=' + prev.getAttribute('data-id');
+  }
+
   xhr.open("POST", '/change_column', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
   xhr.send(body); 
 }
 
-function sendChangeCard(card) {
-  var place = findObject(card);
-  var text = card.innerHTML;
-  var column = card.parentNode.parentNode;
+function sendReplaceCard(card) {
+  var next = card.nextSibling;
   var xhr = new XMLHttpRequest();
-  var body = 'column='+ column.getAttribute('data-id') + '&id=' + card.getAttribute('data-id') + 
-             '&text=' + encodeURIComponent(text) + '&place=' + place;
+  var body = 'id=' + card.getAttribute('data-id')
+
+  if (next) {
+    body += '&next=' + next.getAttribute('data-id');
+  }
+  else {
+    prev = card.previousSibling;
+    if (prev) body += '&prev=' + prev.getAttribute('data-id');
+    else {
+      var column = card.parentNode.parentNode.getAttribute('data-id');
+      body += '&column=' + column;
+    }
+  }
 
   console.log(body);
+
   xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
   xhr.send(body);
 }
 
-  function sendDeleteColumn(id) {
+  function sendDeleteColumn(column, place) {
     var xhr = new XMLHttpRequest();
-
+    id = column.getAttribute('data-id')
     var body = 'id=' + id;
-
     xhr.open("POST", '/delete_column', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
     xhr.send(body); 
   }
 
-  function sendDeleteCard(id) {
+  function sendDeleteCard(card) {
     var xhr = new XMLHttpRequest();
-
+    id = card.getAttribute('data-id')
     var body = 'id=' + id;
-
     xhr.open("POST", '/delete_card', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 

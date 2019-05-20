@@ -28,6 +28,7 @@ function createKanban(id,title_text,next) {
 	return kanban;
 }
 
+// Создание доски с окошком для ввода значения заколовка доски
 function createTextareaKanban(button_text,add_func,cancel_func,text=undefined) {
 	var kanban = document.createElement('div');
 	kanban.className = "kanban";
@@ -59,6 +60,15 @@ function createTextareaKanban(button_text,add_func,cancel_func,text=undefined) {
   	kanban.appendChild(input);
   	kanban.appendChild(buttons);
   	return kanban;
+}
+
+function deleteKanban(event) {
+	event.stopPropagation();
+	if (confirm("Удалить элемент?")) {
+		var kanban = event.target.parentNode;
+		sendDelete(kanban);
+		kanban.parentNode.removeChild(kanban);
+	}
 }
 
 // Процесс добавления доски
@@ -101,47 +111,7 @@ function replaceKanban(elem) {
 	elem.parentNode.replaceChild(kanban,elem);
 }
 
-// Обработчик нажатия клавиши
-// При вводе клавиши enter добавляем новую доску
-function pressEnter(e) {
-  if (e.keyCode == 13) {
-    e.target.parentNode.querySelectorAll('.add-card-button')[0].click();
-  } 
-}
-
-// Функции-запросы для связи с сервером и изменения данных в базе данных
-
-// Отправить данные о новой доске
-function sendChanges(kanban) {
-	var title = kanban.querySelectorAll('.title')[0].innerHTML;
-
-	var xhr = new XMLHttpRequest();
-	var body = '';
-	if (kanban.getAttribute('data-id')) body = 'id=' + kanban.getAttribute('data-id') + '&';
-	body += 'title=' + encodeURIComponent(title);
-
-	xhr.open("POST", '/change_kanban', true);
-	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-	xhr.onreadystatechange = function() {
-	  if (this.readyState != 4) return;
-
-	  kanban.setAttribute('data-id', this.responseText);
-	}
-
-	xhr.send(body);	
-}
-
-function sendDelete(kanban) {
-	var xhr = new XMLHttpRequest();
-	var body = 'id=' + kanban.getAttribute('data-id');
-
-	xhr.open("POST", '/delete_kanban', true);
-	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-	xhr.send(body);	
-}
-
+// Вспомогательная функция для отображения кнопок удаления и редактирования
 function showButtons(kanban,state) {
 	var edit = kanban.querySelectorAll('.edit')[0];
 	var del = kanban.querySelectorAll('.delete')[0];
@@ -153,16 +123,7 @@ function showButtons(kanban,state) {
 	}
 }
 
-
-function deleteKanban(event) {
-	event.stopPropagation();
-	if (confirm("Удалить элемент?")) {
-		var kanban = event.target.parentNode;
-		sendDelete(kanban);
-		kanban.parentNode.removeChild(kanban);
-	}
-}
-
+// Сохраняем старое значение заголовка канбана для отмены изменений
 var oldTitle = undefined;
 
 function startChangeKanban(event) {
@@ -195,6 +156,48 @@ function stopChangeKanban(elem) {
 		var new_kanban = createKanban(kanban.getAttribute('data-id'),text,kanban);
 		kanban.parentNode.removeChild(kanban);
 	}
+}
+
+// Обработчик нажатия клавиши
+// При вводе клавиши enter добавляем новую доску
+function pressEnter(e) {
+  if (e.keyCode == 13) {
+    e.target.parentNode.querySelectorAll('.add-card-button')[0].click();
+  } 
+}
+
+// Функции-запросы для связи с сервером и изменения данных в базе данных
+
+// Отправить данные о новой доске
+function sendChanges(kanban) {
+	var title = kanban.querySelectorAll('.title')[0].innerHTML;
+
+	var xhr = new XMLHttpRequest();
+	var body = '';
+	if (kanban.getAttribute('data-id')) body = 'id=' + kanban.getAttribute('data-id') + '&';
+	body += 'title=' + encodeURIComponent(title);
+
+	xhr.open("POST", '/change_kanban', true);
+	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+	xhr.onreadystatechange = function() {
+	  if (this.readyState != 4) return;
+
+	  kanban.setAttribute('data-id', this.responseText);
+	}
+
+	xhr.send(body);	
+}
+
+// Отправить данные об удалении доски
+function sendDelete(kanban) {
+	var xhr = new XMLHttpRequest();
+	var body = 'id=' + kanban.getAttribute('data-id');
+
+	xhr.open("POST", '/delete_kanban', true);
+	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+	xhr.send(body);	
 }
 
 // Добавление на страницу всех досок, полученных от сервера при загрузке страницы
