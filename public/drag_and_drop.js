@@ -109,7 +109,7 @@ var DragManager = new function() {
       zIndex: avatar.zIndex || '',
       transform : "rotate(0deg)",
       background: avatar.style.background,
-      width: '100%'
+      width: '98%'
     };
     avatar.style.width = getComputedStyle(dragObject.elem).width;
     avatar.style.transform = "rotate(5deg)";
