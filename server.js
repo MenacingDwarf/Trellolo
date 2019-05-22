@@ -112,18 +112,21 @@ server.get('/kanbans',function(req,res){
 });
 
 
-// Добавление новой доски в базу данных
+// Добавление или изменение доски в базе данных
 server.post('/change_kanban', urlencodedParser, function (req, res) {
+	// если приходит id доску необходимо изменить
 	if (req.body.id) {
 		pool.query("UPDATE kanban SET title=$1 WHERE kanban_id=$2",
 				   [req.body.title,req.body.id]);
 	}
+	// иначе добавляем новую
 	else pool.query("INSERT INTO kanban VALUES(DEFAULT,$1,$2) RETURNING kanban_id",
 					[req.body.title, req.session.user_id], (err, res1) => {
 		res.send(res1.rows[0].kanban_id.toString());
 	})
 });
 
+// Удаление существующей доски
 server.post('/delete_kanban', urlencodedParser, function (req, res) {
 	if (req.body.id) {
 		pool.query("DELETE FROM kanban WHERE kanban_id=$1",[req.body.id]);
@@ -163,7 +166,10 @@ server.get('/kanban', function(req,res){
 // Если в запросе присутствует id значит необходимо изменить существующую колонку
 // Иначе добавить новую и вернуть id этой новой колонки
 server.post('/change_column', urlencodedParser, function (req, res) {
+	// Добавление новой колонки в базу данных в конец списка колонок
 	function InsertColumn() {
+		// если на канбане уже были колонки, от клиента приходит id последней из них
+		// необходимо присвоить полю prev_column новой колонки id последней колонки
 		if (req.body.last_column) {
 			pool.query("INSERT INTO kanban_column VALUES(DEFAULT,$1,$2,$3,NULL) RETURNING column_id",
 				       [req.body.kanban,req.body.title,req.body.last_column],(err,res1) => {
@@ -179,10 +185,13 @@ server.post('/change_column', urlencodedParser, function (req, res) {
 		}
 	}
 
+	// Перемещение существующей колонки
 	var ReplaceColumn = async() => {
+		// получаем информацию о перемещаемой колонке
 		var column = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1",[req.body.id]);
 		column = column.rows[0];
 
+		// переприсваиваем ссылки следующей и предыдущей колонки, если они есть, чтобы убрать её с этого места
 		if (column.next_column) {
 			await pool.query("UPDATE kanban_column SET prev_column = $1 WHERE column_id = $2",[column.prev_column,column.next_column]);
 		}
@@ -190,22 +199,22 @@ server.post('/change_column', urlencodedParser, function (req, res) {
 			await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.next_column,column.prev_column]);
 		}
 
-
+		// если пришла ссылка на следующую колонку, значит колонка перемещается в начало или в середину
 		if (req.body.next) {
 			var next = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1",[req.body.next]);
 			next = next.rows[0];
-
 			
-			
+			// меняем перемещаемую колонку
 			await pool.query("UPDATE kanban_column SET prev_column = $1, next_column = $2 WHERE column_id = $3",
 							 [next.prev_column,next.column_id,column.column_id]);
-
+			// если вставляем в середину, надо изменить ссылку предыдущей колонки
 			if (next.prev_column) {
 				await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.column_id,next.prev_column]);
 			}
-
+			// меняем следующую колонку
 			await pool.query("UPDATE kanban_column SET prev_column = $1 WHERE column_id = $2",[column.column_id,next.column_id]);
 		}
+		// если пришла ссылка на предыдущую колонку, значит колонка меремещается в конец
 		else if (req.body.prev) {
 			var prev = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1",[req.body.prev]);
 			prev = prev.rows[0];
@@ -218,12 +227,15 @@ server.post('/change_column', urlencodedParser, function (req, res) {
 
 	}
 
+	// если не пришло id добаляем новую колонку
 	if (!req.body.id) {
 		InsertColumn();
 	}
+	// если пришёл заголовок, значит произошлоо изменение заголовка
 	else if (req.body.title) {
 		pool.query("UPDATE kanban_column SET title = $1 WHERE column_id = $2",[req.body.title,req.body.id]);
 	}
+	// если пришла ссылка на следующую или предыдущую, произошло перемещение
 	else if (req.body.next || req.body.prev) {
 		ReplaceColumn();
 	}
@@ -234,7 +246,10 @@ server.post('/change_column', urlencodedParser, function (req, res) {
 // Если в запросе присутствует id значит необходимо изменить существующую карточку
 // Иначе добавить новую и вернуть id этой новой карточки
 server.post('/change_card', urlencodedParser, function (req, res) {
+	// Добавление новой карточки в базу данных в конец списка карточек
 	function InsertCard() {
+		// если в колонке уже были карточки, от клиента приходит id последней из них
+		// необходимо присвоить полю prev_card новой карточки id последней карточки
 		if (req.body.last_card) {
 			pool.query("INSERT INTO card VALUES(DEFAULT,$1,$2,$3,NULL) RETURNING card_id",
 				       [req.body.column,req.body.text,req.body.last_card],(err,res1) => {
@@ -250,10 +265,13 @@ server.post('/change_card', urlencodedParser, function (req, res) {
 		}
 	}
 
+	// Перемещение существующей карточки
 	var ReplaceCard = async() => {
+		// получаем информацию о перемещаемой карточке
 		var card = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.id]);
 		card = card.rows[0];
 
+		// переприсваиваем ссылки следующей и предыдущей карточки, если они есть, чтобы убрать её с этого места
 		if (card.next_card) {
 			await pool.query("UPDATE card SET prev_card = $1 WHERE card_id = $2",[card.prev_card,card.next_card]);
 		}
@@ -261,20 +279,22 @@ server.post('/change_card', urlencodedParser, function (req, res) {
 			await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.next_card,card.prev_card]);
 		}
 
+		// если пришла ссылка на следующую карточку, значит карточка перемещается в начало или в середину
 		if (req.body.next) {
 			var next = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.next]);
 			next = next.rows[0];
-
 			
+			// меняем перемещаемую карточку
 			await pool.query("UPDATE card SET column_id = $1, prev_card = $2, next_card = $3 WHERE card_id = $4",
 							 [next.column_id,next.prev_card,next.card_id,card.card_id]);
-
+			// если вставляем в середину, надо изменить ссылку предыдущей карточки
 			if (next.prev_card) {
 				await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.card_id,next.prev_card]);
 			}
-
+			// меняем следующую карточку
 			await pool.query("UPDATE card SET prev_card = $1 WHERE card_id = $2",[card.card_id,next.card_id]);
 		}
+		// если пришла ссылка на предыдущую колонку, значит колонка меремещается в конец
 		else if (req.body.prev) {
 			var prev = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.prev]);
 			prev = prev.rows[0];
@@ -284,6 +304,7 @@ server.post('/change_card', urlencodedParser, function (req, res) {
 
 			await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.card_id,prev.card_id]);
 		}
+		// если пришла колонка, карточка вставляется в пустую колонку
 		else {
 			await pool.query("UPDATE card SET column_id = $1, prev_card = NULL, next_card = NULL WHERE card_id = $2",
 							 [req.body.column, card.card_id]);
@@ -291,29 +312,35 @@ server.post('/change_card', urlencodedParser, function (req, res) {
 		
 
 	}
-
+	// если не пришло id добаляем новую карточку
 	if (!req.body.id) {
 		InsertCard();
 	}
+	// если пришёл текс, значит произошло изменение текста карточки
 	else if (req.body.text) {
 		pool.query("UPDATE card SET text = $1 WHERE card_id = $2",[req.body.text, req.body.id]);
 	}
+	// если пришла ссылка на следующую или предыдущую или на колонку, произошло перемещение
 	else if (req.body.next || req.body.prev || req.body.column) {
 		ReplaceCard();
 	}
 });
 
+// Удаление колонки
 server.post('/delete_column', urlencodedParser, function (req, res) {
 	var deleteColumn = async() => {
+		// получение информации об удаляемой колонке 
 		var column = await pool.query("SELECT * FROM kanban_column WHERE column_id = $1", [req.body.id]);
 		column = column.rows[0];
 
+		// переприсваиваем ссылки следующей и предыдущей колонки, если они есть, чтобы убрать её с этого места
 		if (column.next_column) {
 			await pool.query("UPDATE kanban_column SET prev_column = $1 WHERE column_id = $2",[column.prev_column,column.next_column]);
 		}
 		if (column.prev_column) {
 			await pool.query("UPDATE kanban_column SET next_column = $1 WHERE column_id = $2",[column.next_column,column.prev_column]);
 		}
+
 		await pool.query("DELETE FROM kanban_column WHERE column_id = $1",[req.body.id]);
 	}
 
@@ -322,17 +349,21 @@ server.post('/delete_column', urlencodedParser, function (req, res) {
 	}
 });
 
+// Удаление карточки
 server.post('/delete_card', urlencodedParser, function (req, res) {
 	var deleteCard = async() => {
+		// получение информации об удаляемой карточке
 		var card = await pool.query("SELECT * FROM card WHERE card_id = $1",[req.body.id]);
 		card = card.rows[0];
 
+		// переприсваиваем ссылки следующей и предыдущей карточки, если они есть, чтобы убрать её с этого места
 		if (card.next_card) {
 			await pool.query("UPDATE card SET prev_card = $1 WHERE card_id = $2",[card.prev_card,card.next_card]);
 		}
 		if (card.prev_card) {
 			await pool.query("UPDATE card SET next_card = $1 WHERE card_id = $2",[card.next_card,card.prev_card]);
 		}
+
 		await pool.query("DELETE FROM card WHERE card_id = $1",[req.body.id]);
 	}
 	if (req.body.id) {

@@ -308,7 +308,7 @@ function sendReplaceColumn(column) {
   }
   else {
     prev = column.previousSibling;
-    if (prev) body += '&prev=' + prev.getAttribute('data-id');
+    if (prev.className == "column") body += '&prev=' + prev.getAttribute('data-id');
   }
 
   xhr.open("POST", '/change_column', true);
@@ -333,8 +333,6 @@ function sendReplaceCard(card) {
       body += '&column=' + column;
     }
   }
-
-  console.log(body);
 
   xhr.open("POST", '/change_card', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
