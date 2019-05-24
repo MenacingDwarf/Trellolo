@@ -11,6 +11,7 @@ var DragManager = new function() {
       empty - добавленный пустой элемент, на место которого надо переместить объект
       height - высота переносимого объекта
       shiftX/shiftY - относительный сдвиг курсора от угла элемента
+      background - цвет фона, для возврата к нему после покраснения
     }
   */
   var dragObject = {};
@@ -37,8 +38,6 @@ var DragManager = new function() {
     // сохраним ширину и высоту объекта
     dragObject.background = getComputedStyle(elem).background;
     dragObject.height = getComputedStyle(elem).height;
-    dragObject.oldPlace = findObject(elem);
-    dragObject.parent = elem.parentNode;
 
     // запомним, что элемент нажат на текущих координатах pageX/pageY
     dragObject.downX = e.pageX;
@@ -164,6 +163,8 @@ var DragManager = new function() {
 
   // окончание переноса
   // если сохранён пустой элемент вставляем переносимый объект на его место
+  // если сохранён элемент корзины удаляем элемент
+  // делаем соответствующие запросы
   // иначе совершаем откат
   function finishDrag(e) {
     if (dragObject.empty) {
@@ -174,7 +175,7 @@ var DragManager = new function() {
         sendReplaceColumn(dragObject.avatar);
       }
       else {
-        sendReplaceCard(dragObject.avatar, dragObject.parent.parentNode, dragObject.oldPlace);
+        sendReplaceCard(dragObject.avatar);
       }
     }
     else if (dragObject.droppable) {
@@ -209,8 +210,9 @@ var DragManager = new function() {
       dragObject.empty = undefined;
     }
 
-    // если идёт перемещение колонки
+    // если мышь навередна на корзину
     if (dropElem.trashhold) {
+      // сохраняем информацию о наведении на корзину и добавляем покраснение перемещаемому объекту и корзине
       if (!dragObject.droppable) {
         dragObject.droppable = dropElem.trashhold;
         dragObject.trashholdBackground = getComputedStyle(dropElem.trashhold).background;
@@ -221,12 +223,14 @@ var DragManager = new function() {
     }
     else {
       if (dragObject.droppable) {
+        // если раньше были наведены на корзину, убираем покраснение
         if (dragObject.droppable.className == "trashhold") {
           dragObject.avatar.style.background = dragObject.background;
           dragObject.droppable.style.background = dragObject.trashholdBackground;
           dragObject.droppable = undefined;
         }
       }
+      // если идёт перемещение колонки
       if (dragObject.avatar.className == 'column') {
         empty.className = "empty-column";
         if (dropElem.column) { // очищаем пустой элемент если мышь наведена на колонку
@@ -249,7 +253,8 @@ var DragManager = new function() {
       	dragObject.empty = dropElem.card.parentNode.insertBefore(empty,dragObject.droppable);
     	}
     	else if (!dropElem.cards) {
-    		if (dropElem.column) {  // если идёт перемещение карточки и мышь наведена на колонку, но не список карточек
+        // если идёт перемещение карточки и мышь наведена на колонку, но не список карточек
+    		if (dropElem.column) {  
           // если мышь наведена на колонку, не являющуюся не созданной и либо на странице нет пустого элемента 
           // либо он есть и либо у нас сохранён элемент подходящий для вставки 
           // либо наведённая колонка не равна колонке, содержащей пустой элемент
@@ -273,11 +278,9 @@ var DragManager = new function() {
   document.onmousemove = onMouseMove;
   document.onmouseup = onMouseUp;
   document.onmousedown = onMouseDown;
-  //document.addEventListener('touchmove', onMouseMove, false);
-  document.addEventListener('touchend', onMouseUp, false);
-  //document.addEventListener('touchstart', onMouseDown, false);
 };
 
+// Возвращает координаты объекта
 function getCoords(elem) { // кроме IE8-
   var box = elem.getBoundingClientRect();
 
@@ -287,27 +290,22 @@ function getCoords(elem) { // кроме IE8-
   };
 }
 
-// Функция ищет объект среди детей его родителя и возвращает его порядковый номер
-function findObject(obj) {
-  var parent = obj.parentNode;
-  for (var i = 0; i<parent.children.length; i++) {
-    if (parent.children[i] == obj) return i;
-  }
-  return -1;
-}
-
 // Запросы к серверу об изменениях на доске
+
+// Запрос с сообщением о переносе колонки
 function sendReplaceColumn(column) {
   var next = column.nextSibling;
   var xhr = new XMLHttpRequest();
 
   var body = 'id=' + column.getAttribute('data-id');
 
+  // Если есть следующая колонка передаём её id в переменную next
   if (next.getAttribute('data-id')) {
     body += '&next=' + next.getAttribute('data-id');
   }
   else {
     prev = column.previousSibling;
+    // Если нет следующей но есть предыдущая колонка передаём её id в переменную prev
     if (prev.className == "column") body += '&prev=' + prev.getAttribute('data-id');
   }
 
@@ -317,17 +315,21 @@ function sendReplaceColumn(column) {
   xhr.send(body); 
 }
 
+// Запрос с сообщением о переносе карточки
 function sendReplaceCard(card) {
   var next = card.nextSibling;
   var xhr = new XMLHttpRequest();
   var body = 'id=' + card.getAttribute('data-id')
 
+  // Если есть следующая карточка передаём её id в переменную next
   if (next) {
     body += '&next=' + next.getAttribute('data-id');
   }
   else {
     prev = card.previousSibling;
+    // Если нет следующей но есть предыдущая карточка передаём её id в переменную prev
     if (prev) body += '&prev=' + prev.getAttribute('data-id');
+    // Иначе перемещение идёт в пустую колонку, передаём её id в переменную column
     else {
       var column = card.parentNode.parentNode.getAttribute('data-id');
       body += '&column=' + column;
@@ -340,22 +342,24 @@ function sendReplaceCard(card) {
   xhr.send(body);
 }
 
-  function sendDeleteColumn(column, place) {
-    var xhr = new XMLHttpRequest();
-    id = column.getAttribute('data-id')
-    var body = 'id=' + id;
-    xhr.open("POST", '/delete_column', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+// Запрос с сообщением об удалении колонки
+function sendDeleteColumn(column) {
+  var xhr = new XMLHttpRequest();
+  id = column.getAttribute('data-id')
+  var body = 'id=' + id;
+  xhr.open("POST", '/delete_column', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-    xhr.send(body); 
-  }
+  xhr.send(body); 
+}
 
-  function sendDeleteCard(card) {
-    var xhr = new XMLHttpRequest();
-    id = card.getAttribute('data-id')
-    var body = 'id=' + id;
-    xhr.open("POST", '/delete_card', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+// Запрос с сообщением об удалении карточки
+function sendDeleteCard(card) {
+  var xhr = new XMLHttpRequest();
+  id = card.getAttribute('data-id')
+  var body = 'id=' + id;
+  xhr.open("POST", '/delete_card', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-    xhr.send(body); 
-  }
+  xhr.send(body); 
+}

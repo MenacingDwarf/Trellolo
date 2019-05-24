@@ -6,6 +6,7 @@ function sendNewColumn(column) {
   var xhr = new XMLHttpRequest();
 
   var body = 'kanban='+ kanban_id + '&title=' + encodeURIComponent(title);
+  // Если на канбане уже были колонки, необходимо передать id последней из них в переменную last_column
   if (column.parentNode.children.length > 2) {
     var place = column.parentNode.children.length-3;
     var last_column = column.parentNode.children[place].getAttribute('data-id')
@@ -32,6 +33,7 @@ function sendNewCard(card) {
   var column = card.parentNode.parentNode;
   var xhr = new XMLHttpRequest();
   var body = 'column='+ column.getAttribute('data-id') + '&text=' + encodeURIComponent(text);
+  // Если в колонке уже были карточки, необходимо передать id последней из них в переменную last_card
   if (card.parentNode.children.length > 1) {
     var place = card.parentNode.children.length-2;
     var last_card = card.parentNode.children[place].getAttribute('data-id');
@@ -376,6 +378,7 @@ function show(state){
   document.getElementById('wrap').style.display = state;      
 }
 
+// Заполнение колонки карточками в нужном порядке
 function fillColumn(cards, column) {
   if (cards.length != 0) {
     var cur_card = cards.find(c => !c.prev_card);
@@ -387,6 +390,7 @@ function fillColumn(cards, column) {
   }
 }
 
+// Заполнение доски колонками в нужном порядке
 function fillKanban(columns) {
   if (columns.length != 0) {
     var cur_column = columns.find(c => !c.prev_column);
@@ -400,4 +404,6 @@ function fillKanban(columns) {
   }
 }
 
+// При загрузке страницы заполняем доску колонками, полученными с сервера
+// Все данные с сервера хранятся в data
 fillKanban(data.columns);
